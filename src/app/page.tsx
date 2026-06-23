@@ -10,9 +10,16 @@ import {
   ReceiptText,
   UsersRound,
 } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { LandingAiHelper } from "@/components/landing-ai-helper";
 import { TradioLogo } from "@/components/tradio-logo";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+};
 
 const features = [
   {
@@ -81,9 +88,67 @@ const plans = [
   },
 ];
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tradio.uk";
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@id": `${siteUrl}/#organization`,
+      "@type": "Organization",
+      logo: `${siteUrl}/tradio-mark.png`,
+      name: "Tradio",
+      url: siteUrl,
+    },
+    {
+      "@id": `${siteUrl}/#software`,
+      "@type": "SoftwareApplication",
+      applicationCategory: "BusinessApplication",
+      audience: {
+        "@type": "Audience",
+        audienceType:
+          "UK tradespeople including plumbers, electricians, gardeners, cleaners, builders, and handymen",
+      },
+      description:
+        "Tradio helps UK tradespeople manage customers, create quotes, send invoices, capture leads, track jobs, and export professional PDFs.",
+      image: `${siteUrl}/tradio-logo.png`,
+      name: "Tradio",
+      offers: [
+        {
+          "@type": "Offer",
+          name: "Free Trial",
+          price: "0",
+          priceCurrency: "GBP",
+        },
+        {
+          "@type": "Offer",
+          name: "Lite",
+          price: "5.99",
+          priceCurrency: "GBP",
+        },
+        {
+          "@type": "Offer",
+          name: "Elite",
+          price: "15.99",
+          priceCurrency: "GBP",
+        },
+      ],
+      operatingSystem: "Web",
+      provider: {
+        "@id": `${siteUrl}/#organization`,
+      },
+      url: siteUrl,
+    },
+  ],
+};
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#061d34] text-white">
+      <script
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        type="application/ld+json"
+      />
       <section className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_72%_20%,rgba(255,90,0,0.42),transparent_22rem),linear-gradient(135deg,#06233f_0%,#031426_58%,#ff5a00_160%)]" />
         <div className="absolute right-[-7rem] top-[-8rem] -z-10 h-80 w-80 rotate-45 bg-copper" />
