@@ -6,6 +6,7 @@ import {
   MailPlus,
   BarChart3,
   BriefcaseBusiness,
+  MessageCircleQuestion,
   ReceiptText,
   Settings,
   ShieldCheck,
@@ -36,6 +37,7 @@ const navItems = [
     icon: BriefcaseBusiness,
     eliteOnly: true,
   },
+  { label: "Support", href: "/dashboard/support", icon: MessageCircleQuestion },
   { label: "Settings", href: "/settings", icon: Settings },
   {
     label: "Admin",
@@ -54,6 +56,7 @@ type AppShellProps = {
     | "invoices"
     | "reports"
     | "jobs"
+    | "support"
     | "settings"
     | "admin"
     | "account";
@@ -70,6 +73,7 @@ const activeByHref: Record<string, AppShellProps["active"]> = {
   "/dashboard/leads": "leads",
   "/dashboard/jobs": "jobs",
   "/dashboard/reports": "reports",
+  "/dashboard/support": "support",
   "/dashboard/admin": "admin",
   "/invoices": "invoices",
   "/quotes": "quotes",

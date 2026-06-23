@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   BarChart3,
+  Bot,
   BriefcaseBusiness,
   Check,
   Clock,
@@ -11,8 +12,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { TradioLogo } from "@/components/tradio-logo";
-import { hasActiveSubscription } from "@/lib/subscription";
-import { createClient } from "@/lib/supabase/server";
 
 const features = [
   {
@@ -51,6 +50,12 @@ const features = [
     icon: BarChart3,
     title: "Reports",
   },
+  {
+    description:
+      "Ask Tradio Support AI for quick help with setup, quotes, invoices, leads, subscriptions, and common app questions.",
+    icon: Bot,
+    title: "AI support",
+  },
 ];
 
 const plans = [
@@ -75,20 +80,7 @@ const plans = [
   },
 ];
 
-export default async function Home() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = user
-    ? await supabase
-        .from("profiles")
-        .select("plan, role, subscription_status, trial_expires_at")
-        .eq("id", user.id)
-        .maybeSingle()
-    : { data: null };
-  const dashboardHref = hasActiveSubscription(profile) ? "/dashboard" : "/pricing";
-
+export default function Home() {
   return (
     <main className="min-h-screen bg-[#061d34] text-white">
       <section className="relative isolate overflow-hidden">
@@ -103,25 +95,16 @@ export default async function Home() {
             <TradioLogo />
           </Link>
           <nav className="flex items-center gap-2">
-            {user ? (
-              <Link className="btn-accent" href={dashboardHref}>
-                Open app
-                <ArrowRight aria-hidden="true" size={16} />
-              </Link>
-            ) : (
-              <>
-                <Link
-                  className="hidden rounded-lg px-4 py-2.5 text-sm font-bold text-white/82 transition hover:bg-white/10 hover:text-white sm:inline-flex"
-                  href="/login"
-                >
-                  Log in
-                </Link>
-                <Link className="btn-accent" href="/signup">
-                  Start free
-                  <ArrowRight aria-hidden="true" size={16} />
-                </Link>
-              </>
-            )}
+            <Link
+              className="hidden rounded-lg px-4 py-2.5 text-sm font-bold text-white/82 transition hover:bg-white/10 hover:text-white sm:inline-flex"
+              href="/login"
+            >
+              Log in
+            </Link>
+            <Link className="btn-accent" href="/signup">
+              Start free
+              <ArrowRight aria-hidden="true" size={16} />
+            </Link>
           </nav>
         </header>
 
@@ -137,15 +120,15 @@ export default async function Home() {
               polished quotes, convert invoices, and stay organised.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link className="btn-accent" href={user ? dashboardHref : "/signup"}>
-                {user ? "Open Tradio" : "Create account"}
+              <Link className="btn-accent" href="/signup">
+                Create account
                 <ArrowRight aria-hidden="true" size={17} />
               </Link>
               <Link
                 className="btn-secondary border-white/20 bg-white/10 text-white hover:bg-white hover:text-ink"
-                href={user ? "/pricing" : "/login"}
+                href="/login?redirectedFrom=/dashboard/support"
               >
-                {user ? "View packages" : "Log in"}
+                Ask AI support
               </Link>
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -262,6 +245,71 @@ export default async function Home() {
         </div>
       </section>
 
+      <section className="bg-white px-5 pb-16 text-ink sm:px-8">
+        <div className="mx-auto grid max-w-7xl overflow-hidden rounded-lg border border-field bg-[linear-gradient(135deg,#06233f,#031426)] shadow-soft lg:grid-cols-[0.88fr_1.12fr]">
+          <div className="relative p-6 text-white sm:p-8">
+            <div className="absolute -right-12 -top-12 h-32 w-32 rotate-45 bg-copper" />
+            <div className="relative flex size-12 items-center justify-center rounded-lg bg-white/10 text-copper ring-1 ring-white/15">
+              <Bot aria-hidden="true" size={25} />
+            </div>
+            <p className="relative mt-6 text-sm font-black uppercase tracking-[0.16em] text-copper">
+              Built-in help
+            </p>
+            <h2 className="relative mt-3 text-3xl font-black leading-tight">
+              Support AI is ready when trades get busy.
+            </h2>
+            <p className="relative mt-4 max-w-xl text-sm leading-7 text-white/76">
+              Users can ask how to create quotes, convert invoices, manage
+              lead emails, check subscriptions, or solve common setup issues
+              without leaving Tradio.
+            </p>
+            <Link
+              className="btn-accent relative mt-6"
+              href="/login?redirectedFrom=/dashboard/support"
+            >
+              Open support AI
+              <ArrowRight aria-hidden="true" size={16} />
+            </Link>
+          </div>
+
+          <div className="grid gap-3 bg-[#f4f7fb] p-5 sm:p-8">
+            {[
+              "How do I create and send a quote?",
+              "Why are leads not showing from my mailbox?",
+              "How do I convert a quote into an invoice?",
+            ].map((question, index) => (
+              <div
+                className="rounded-lg border border-field bg-white p-4 shadow-sm"
+                key={question}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
+                      index === 1
+                        ? "bg-[#fff1e8] text-copper"
+                        : "bg-[#e7f0f8] text-forest"
+                    }`}
+                  >
+                    {index === 1 ? (
+                      <Bot aria-hidden="true" size={18} />
+                    ) : (
+                      <Check aria-hidden="true" size={18} />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-ink">{question}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      Tradio Support AI gives a short, step-by-step answer
+                      based on the app workflow.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="bg-[linear-gradient(180deg,#edf4fa,#ffffff)] px-5 py-16 text-ink sm:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -269,7 +317,7 @@ export default async function Home() {
               <p className="eyebrow">Packages</p>
               <h2 className="page-title">Start free, then choose your setup.</h2>
             </div>
-            <Link className="btn-primary" href={user ? "/pricing" : "/signup"}>
+            <Link className="btn-primary" href="/signup">
               Choose package
               <ArrowRight aria-hidden="true" size={16} />
             </Link>
@@ -322,7 +370,7 @@ export default async function Home() {
               Try Tradio without payment.
             </h2>
           </div>
-          <Link className="btn-accent" href={user ? dashboardHref : "/signup"}>
+          <Link className="btn-accent" href="/signup">
             Start now
             <ArrowRight aria-hidden="true" size={17} />
           </Link>
