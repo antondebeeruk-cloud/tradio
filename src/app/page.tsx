@@ -11,6 +11,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import Link from "next/link";
+import { LandingAiHelper } from "@/components/landing-ai-helper";
 import { TradioLogo } from "@/components/tradio-logo";
 
 const features = [
@@ -148,6 +149,10 @@ export default function Home() {
                 ),
               )}
             </div>
+
+            <div className="mt-6 max-w-2xl lg:hidden">
+              <LandingAiHelper />
+            </div>
           </div>
 
           <div className="relative">
@@ -214,6 +219,10 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+            </div>
+
+            <div className="absolute -bottom-8 left-6 right-6 hidden lg:block">
+              <LandingAiHelper />
             </div>
           </div>
         </div>

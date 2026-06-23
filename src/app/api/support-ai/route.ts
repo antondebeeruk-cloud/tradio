@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getBuiltInSupportAnswer } from "@/lib/support-knowledge";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -75,15 +76,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Login required." }, { status: 401 });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "Support AI is not configured yet. Add OPENAI_API_KEY." },
-      { status: 503 },
-    );
-  }
-
   const body = await request.json().catch(() => null);
   const messages: SupportMessage[] = Array.isArray(body?.messages)
     ? body.messages.filter(isSupportMessage).slice(-10)
@@ -94,6 +86,19 @@ export async function POST(request: NextRequest) {
       { error: "Please enter a support question." },
       { status: 400 },
     );
+  }
+
+  const latestQuestion = [...messages]
+    .reverse()
+    .find((message) => message.role === "user")?.content;
+  const builtInAnswer = getBuiltInSupportAnswer(latestQuestion ?? messages[0].content);
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey || process.env.SUPPORT_AI_PROVIDER === "builtin") {
+    return NextResponse.json({
+      answer: builtInAnswer.answer,
+      source: "built-in",
+    });
   }
 
   const response = await fetch("https://api.openai.com/v1/responses", {
@@ -121,14 +126,23 @@ export async function POST(request: NextRequest) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    return NextResponse.json(
-      {
-        error:
-          data?.error?.message ||
-          "Support AI could not answer right now. Please try again.",
-      },
-      { status: 502 },
-    );
+    const errorMessage = data?.error?.message || "";
+    const isQuotaError =
+      response.status === 429 ||
+      errorMessage.toLowerCase().includes("quota") ||
+      errorMessage.toLowerCase().includes("billing");
+
+    if (isQuotaError) {
+      return NextResponse.json({
+        answer: `${builtInAnswer.answer}\n\nSupport AI is using Tradio's free built-in help right now because the connected AI quota is unavailable.`,
+        source: "built-in",
+      });
+    }
+
+    return NextResponse.json({
+      answer: builtInAnswer.answer,
+      source: "built-in",
+    });
   }
 
   const answer = extractResponseText(data);
