@@ -6,9 +6,14 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 function hasActiveSubscription(profile: {
   plan: string | null;
+  role: string | null;
   subscription_status: string | null;
   trial_expires_at: string | null;
 } | null) {
+  if (profile?.role === "admin") {
+    return true;
+  }
+
   if (!profile?.plan || profile.subscription_status !== "active") {
     return false;
   }
@@ -20,6 +25,23 @@ function hasActiveSubscription(profile: {
   }
 
   return profile.plan === "lite" || profile.plan === "elite";
+}
+
+function hasEliteAccess(profile: {
+  plan: string | null;
+  role: string | null;
+  subscription_status: string | null;
+  trial_expires_at: string | null;
+} | null) {
+  if (profile?.role === "admin") {
+    return true;
+  }
+
+  if (!hasActiveSubscription(profile)) {
+    return false;
+  }
+
+  return profile?.plan === "elite" || profile?.plan === "trial";
 }
 
 export async function middleware(request: NextRequest) {
@@ -59,6 +81,9 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
+  const isEliteRoute =
+    pathname.startsWith("/dashboard/reports") ||
+    pathname.startsWith("/dashboard/jobs");
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/customers") ||
@@ -78,7 +103,7 @@ export async function middleware(request: NextRequest) {
   if (isProtectedRoute && user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plan, subscription_status, trial_expires_at")
+      .select("plan, role, subscription_status, trial_expires_at")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -95,6 +120,17 @@ export async function middleware(request: NextRequest) {
         redirectUrl.searchParams.set("message", "Your free trial has expired.");
       }
 
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    if (isEliteRoute && !hasEliteAccess(profile)) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/pricing";
+      redirectUrl.search = "";
+      redirectUrl.searchParams.set(
+        "message",
+        "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.",
+      );
       return NextResponse.redirect(redirectUrl);
     }
   }

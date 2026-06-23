@@ -130,3 +130,25 @@ export async function getPayPalSubscription(subscriptionId: string) {
 
   return (await response.json()) as PayPalSubscriptionResponse;
 }
+
+export async function cancelPayPalSubscription(
+  subscriptionId: string,
+  reason = "Cancelled from Tradio account settings.",
+) {
+  const accessToken = await paypalAccessToken();
+  const response = await fetch(
+    `${paypalBaseUrl}/v1/billing/subscriptions/${subscriptionId}/cancel`,
+    {
+      body: JSON.stringify({ reason }),
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("PayPal subscription could not be cancelled.");
+  }
+}

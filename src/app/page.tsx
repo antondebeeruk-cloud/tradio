@@ -14,7 +14,7 @@ export default async function Home() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan, subscription_status, trial_expires_at")
+    .select("plan, role, subscription_status, trial_expires_at")
     .eq("id", user.id)
     .maybeSingle();
 

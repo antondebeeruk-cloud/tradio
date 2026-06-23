@@ -27,21 +27,27 @@ export default async function EditCustomerPage({
     redirect("/login");
   }
 
-  const { data: customer, error } = await supabase
-    .from("customers")
-    .select(
-      "id, name, email, phone, address_line_1, address_line_2, town, postcode, notes",
-    )
-    .eq("id", params.id)
-    .eq("user_id", user.id)
-    .single();
+  const [profileResult, customerResult] = await Promise.all([
+    supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("customers")
+      .select(
+        "id, name, email, phone, address_line_1, address_line_2, town, postcode, notes",
+      )
+      .eq("id", params.id)
+      .eq("user_id", user.id)
+      .single(),
+  ]);
+
+  const customer = customerResult.data;
+  const error = customerResult.error;
 
   if (error || !customer) {
     notFound();
   }
 
   return (
-    <AppShell active="customers">
+    <AppShell active="customers" plan={profileResult.data?.plan}>
       <header className="app-page-header">
         <div>
           <p className="eyebrow">Customers</p>

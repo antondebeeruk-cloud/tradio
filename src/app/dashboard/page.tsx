@@ -51,11 +51,17 @@ export default async function DashboardPage() {
   }
 
   const [
+    profileResult,
     customersResult,
     recentQuotesResult,
     recentInvoicesResult,
     unpaidInvoicesResult,
   ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("plan")
+      .eq("id", user.id)
+      .maybeSingle(),
     supabase
       .from("customers")
       .select("id", { count: "exact", head: true })
@@ -89,6 +95,7 @@ export default async function DashboardPage() {
   ]);
 
   const firstError =
+    profileResult.error ??
     customersResult.error ??
     recentQuotesResult.error ??
     recentInvoicesResult.error ??
@@ -131,7 +138,7 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <AppShell active="dashboard">
+    <AppShell active="dashboard" plan={profileResult.data?.plan}>
       <header className="app-page-header">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>

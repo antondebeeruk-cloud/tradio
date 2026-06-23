@@ -44,20 +44,27 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
     redirect("/login");
   }
 
-  const { data: quotes, error } = await supabase
-    .from("quotes")
-    .select(
-      "id, quote_number, status, issue_date, expiry_date, subtotal, vat_amount, total, customers(name, email)",
-    )
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const [profileResult, quotesResult] = await Promise.all([
+    supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("quotes")
+      .select(
+        "id, quote_number, status, issue_date, expiry_date, subtotal, vat_amount, total, customers(name, email)",
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  if (error) {
-    redirect(`/dashboard?message=${encodeURIComponent(error.message)}`);
+  const firstError = profileResult.error ?? quotesResult.error;
+
+  if (firstError) {
+    redirect(`/dashboard?message=${encodeURIComponent(firstError.message)}`);
   }
 
+  const quotes = quotesResult.data;
+
   return (
-    <AppShell active="quotes">
+    <AppShell active="quotes" plan={profileResult.data?.plan}>
       <header className="app-page-header">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>

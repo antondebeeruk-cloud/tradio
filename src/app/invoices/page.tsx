@@ -41,17 +41,24 @@ export default async function InvoicesPage({
     redirect("/login");
   }
 
-  const { data: invoices, error } = await supabase
-    .from("invoices")
-    .select(
-      "id, invoice_number, status, issue_date, due_date, total, customers(name, email), quotes(quote_number)",
-    )
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const [profileResult, invoicesResult] = await Promise.all([
+    supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("invoices")
+      .select(
+        "id, invoice_number, status, issue_date, due_date, total, customers(name, email), quotes(quote_number)",
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  if (error) {
-    redirect(`/dashboard?message=${encodeURIComponent(error.message)}`);
+  const firstError = profileResult.error ?? invoicesResult.error;
+
+  if (firstError) {
+    redirect(`/dashboard?message=${encodeURIComponent(firstError.message)}`);
   }
+
+  const invoices = invoicesResult.data;
 
   const statusCounts = {
     unpaid: invoices?.filter((invoice) => invoice.status === "unpaid").length ?? 0,
@@ -61,7 +68,7 @@ export default async function InvoicesPage({
   };
 
   return (
-    <AppShell active="invoices">
+    <AppShell active="invoices" plan={profileResult.data?.plan}>
       <header className="app-page-header">
         <div>
           <p className="eyebrow">Invoices</p>

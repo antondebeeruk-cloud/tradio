@@ -37,7 +37,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   const { data: profile, error } = await supabase
     .from("profiles")
     .select(
-      "full_name, business_name, trade, phone, logo_url, business_address_line_1, business_address_line_2, business_town, business_postcode, vat_number",
+      "full_name, business_name, trade, phone, logo_url, business_address_line_1, business_address_line_2, business_town, business_postcode, vat_number, plan",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -45,7 +45,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   const pageMessage = settingsMessage(error?.message ?? searchParams.message);
 
   return (
-    <AppShell active="settings">
+    <AppShell active="settings" plan={profile?.plan}>
       <header className="app-page-header">
         <div>
           <p className="eyebrow">Settings</p>

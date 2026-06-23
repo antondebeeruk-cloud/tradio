@@ -23,8 +23,14 @@ export default async function NewCustomerPage({
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .maybeSingle();
+
   return (
-    <AppShell active="customers">
+    <AppShell active="customers" plan={profile?.plan}>
       <header className="app-page-header">
         <div>
           <p className="eyebrow">Customers</p>

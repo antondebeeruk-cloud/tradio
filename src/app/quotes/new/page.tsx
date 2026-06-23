@@ -22,18 +22,24 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
     redirect("/login");
   }
 
-  const { data: customers, error } = await supabase
-    .from("customers")
-    .select("id, name")
-    .eq("user_id", user.id)
-    .order("name", { ascending: true });
+  const [profileResult, customersResult] = await Promise.all([
+    supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("customers")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .order("name", { ascending: true }),
+  ]);
+
+  const customers = customersResult.data;
+  const error = profileResult.error ?? customersResult.error;
 
   if (error) {
     redirect(`/quotes?message=${encodeURIComponent(error.message)}`);
   }
 
   return (
-    <AppShell active="quotes">
+    <AppShell active="quotes" plan={profileResult.data?.plan}>
       <header className="app-page-header">
         <div>
           <p className="eyebrow">Quotes</p>
