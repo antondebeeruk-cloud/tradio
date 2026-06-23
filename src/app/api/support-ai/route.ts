@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => null);
-  const messages = Array.isArray(body?.messages)
+  const messages: SupportMessage[] = Array.isArray(body?.messages)
     ? body.messages.filter(isSupportMessage).slice(-10)
     : [];
 
