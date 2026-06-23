@@ -61,6 +61,7 @@ export async function startPayPalCheckout(formData: FormData) {
 
   const { supabase, user } = await requireUser();
   const origin = requestOrigin();
+  let approvalUrl = "";
 
   try {
     const subscription = await createPayPalSubscription({
@@ -80,10 +81,10 @@ export async function startPayPalCheckout(formData: FormData) {
     });
 
     if (error) {
-      redirect(`/pricing?message=${encodeURIComponent(error.message)}`);
+      throw new Error(error.message);
     }
 
-    redirect(subscription.approvalUrl);
+    approvalUrl = subscription.approvalUrl;
   } catch (error) {
     redirect(
       `/pricing?message=${encodeURIComponent(
@@ -91,4 +92,6 @@ export async function startPayPalCheckout(formData: FormData) {
       )}`,
     );
   }
+
+  redirect(approvalUrl);
 }
