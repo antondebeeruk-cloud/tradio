@@ -52,6 +52,48 @@ function parseHeaders(rawHeaders: string) {
   return headers;
 }
 
+function emailAddresses(value?: string) {
+  return Array.from(
+    new Set(
+      (value?.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) ?? []).map(
+        (email) => email.toLowerCase(),
+      ),
+    ),
+  );
+}
+
+function originalRecipientFromHeaders(headers: Record<string, string>) {
+  const leadDomain = process.env.LEAD_EMAIL_DOMAIN || "tradio.uk";
+  const catchAllAddress = process.env.IMAP_USER?.toLowerCase() || "";
+  const recipientHeaders = [
+    headers["x-original-to"],
+    headers["original-recipient"],
+    headers["x-original-recipient"],
+    headers["x-rcpt-to"],
+    headers["x-recipient"],
+    headers["x-forwarded-to"],
+    headers["x-forwarded-for"],
+    headers["delivered-to"],
+    headers["x-delivered-to"],
+    headers["envelope-to"],
+    headers["x-envelope-to"],
+    headers["apparently-to"],
+    headers["resent-to"],
+    headers.to,
+  ];
+  const candidates = recipientHeaders.flatMap(emailAddresses);
+  const domainCandidates = candidates.filter((email) =>
+    email.endsWith(`@${leadDomain}`),
+  );
+  const userLeadAddress =
+    domainCandidates.find((email) => email !== catchAllAddress) ??
+    domainCandidates[0] ??
+    candidates[0] ??
+    "";
+
+  return userLeadAddress;
+}
+
 function parseAddressName(value?: string) {
   if (!value) {
     return "";
@@ -137,17 +179,7 @@ function parseRawEmail(rawEmail: string): ParsedEmail {
   const { body, headers: rawHeaders } = splitHeadersAndBody(rawEmail);
   const headers = parseHeaders(rawHeaders);
   const bodyParts = parseBody(headers, body);
-  const originalRecipient =
-    headers["x-original-to"] ||
-    headers["original-recipient"] ||
-    headers["delivered-to"] ||
-    headers["x-delivered-to"] ||
-    headers["envelope-to"] ||
-    headers["x-envelope-to"] ||
-    headers["apparently-to"] ||
-    headers["resent-to"] ||
-    headers.to ||
-    "";
+  const originalRecipient = originalRecipientFromHeaders(headers);
 
   return {
     bodyHtml: bodyParts.bodyHtml,
