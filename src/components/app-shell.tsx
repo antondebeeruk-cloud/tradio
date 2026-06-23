@@ -8,6 +8,7 @@ import {
   BriefcaseBusiness,
   ReceiptText,
   Settings,
+  ShieldCheck,
   UsersRound,
 } from "lucide-react";
 import Image from "next/image";
@@ -35,6 +36,12 @@ const navItems = [
     eliteOnly: true,
   },
   { label: "Settings", href: "/settings", icon: Settings },
+  {
+    label: "Admin",
+    href: "/dashboard/admin",
+    icon: ShieldCheck,
+    adminOnly: true,
+  },
 ];
 
 type AppShellProps = {
@@ -47,6 +54,7 @@ type AppShellProps = {
     | "reports"
     | "jobs"
     | "settings"
+    | "admin"
     | "account";
   children: React.ReactNode;
   plan?: string | null;
@@ -61,6 +69,7 @@ const activeByHref: Record<string, AppShellProps["active"]> = {
   "/dashboard/leads": "leads",
   "/dashboard/jobs": "jobs",
   "/dashboard/reports": "reports",
+  "/dashboard/admin": "admin",
   "/invoices": "invoices",
   "/quotes": "quotes",
   "/settings": "settings",
@@ -191,6 +200,9 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
         .maybeSingle()
     : { data: null };
   const effectivePlan = profile?.role === "admin" ? "admin" : profile?.plan ?? plan;
+  const visibleNavItems = navItems.filter(
+    (item) => !item.adminOnly || profile?.role === "admin",
+  );
   const email = user?.email ?? "";
   const displayName = profile?.full_name ?? email;
 
@@ -214,7 +226,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
           </div>
 
           <nav className="relative mt-8 flex flex-col gap-2">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <NavLink
                 active={active}
                 effectivePlan={effectivePlan}
@@ -275,7 +287,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
           {user ? (
             <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[linear-gradient(135deg,#06233f,#03182d)] px-2 py-2 shadow-[0_-18px_40px_rgba(7,26,46,0.18)] lg:hidden">
               <div className="flex gap-1 overflow-x-auto">
-                {navItems.map((item) => (
+                {visibleNavItems.map((item) => (
                   <NavLink
                     active={active}
                     effectivePlan={effectivePlan}

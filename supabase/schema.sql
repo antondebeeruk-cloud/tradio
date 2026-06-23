@@ -176,6 +176,14 @@ create table if not exists public.leads (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.admin_support_access_logs (
+  id uuid primary key default gen_random_uuid(),
+  admin_user_id uuid not null references auth.users (id) on delete cascade,
+  target_user_id uuid references auth.users (id) on delete set null,
+  action text not null,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists customers_user_id_idx on public.customers (user_id);
 create index if not exists quotes_user_id_idx on public.quotes (user_id);
 create index if not exists quotes_customer_id_idx on public.quotes (customer_id);
@@ -190,6 +198,12 @@ create index if not exists leads_user_id_idx on public.leads (user_id);
 create index if not exists leads_status_idx on public.leads (user_id, status);
 create index if not exists leads_received_at_idx on public.leads (user_id, received_at desc);
 create index if not exists leads_original_recipient_idx on public.leads (original_recipient);
+create index if not exists admin_support_access_logs_admin_user_id_idx
+  on public.admin_support_access_logs (admin_user_id);
+create index if not exists admin_support_access_logs_target_user_id_idx
+  on public.admin_support_access_logs (target_user_id);
+create index if not exists admin_support_access_logs_created_at_idx
+  on public.admin_support_access_logs (created_at desc);
 
 alter table public.profiles enable row level security;
 alter table public.customers enable row level security;
@@ -199,6 +213,7 @@ alter table public.invoices enable row level security;
 alter table public.invoice_items enable row level security;
 alter table public.jobs enable row level security;
 alter table public.leads enable row level security;
+alter table public.admin_support_access_logs enable row level security;
 
 create or replace function public.current_profile_role()
 returns text
@@ -452,3 +467,26 @@ create policy "Users can update their own leads"
 create policy "Users can delete their own leads"
   on public.leads for delete
   using (user_id = auth.uid());
+
+create policy "Admins can view support access logs"
+  on public.admin_support_access_logs for select
+  using (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role = 'admin'
+    )
+  );
+
+create policy "Admins can create support access logs"
+  on public.admin_support_access_logs for insert
+  with check (
+    admin_user_id = auth.uid()
+    and exists (
+      select 1
+      from public.profiles
+      where profiles.id = auth.uid()
+        and profiles.role = 'admin'
+    )
+  );
