@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
   try {
     const result = await checkLeadsMailbox();
     return NextResponse.json({
+      failed: result.failed,
       found: result.found,
       inspected: result.inspected,
       mailbox: result.mailbox,

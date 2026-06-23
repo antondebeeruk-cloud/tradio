@@ -129,11 +129,15 @@ export async function checkMailboxNow() {
       (total, count) => total + count,
       0,
     );
+    const failedCount = Object.values(result.failed).reduce(
+      (total, count) => total + count,
+      0,
+    );
     message = `${result.processed} email${
       result.processed === 1 ? "" : "s"
     } processed. ${result.mailboxMessages} in ${result.mailbox}, ${
       result.found
-    } found, ${result.inspected} inspected, ${skippedCount} skipped.`;
+    } found, ${result.inspected} inspected, ${skippedCount} skipped, ${failedCount} failed.`;
   } catch (error) {
     redirect(
       `/dashboard/leads?message=${encodeURIComponent(

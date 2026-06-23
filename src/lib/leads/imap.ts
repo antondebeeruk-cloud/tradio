@@ -61,6 +61,15 @@ function parseAddressName(value?: string) {
   return withoutEmail || "";
 }
 
+function safeDate(value?: string) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 function splitHeadersAndBody(rawEmail: string) {
   const splitMatch = rawEmail.match(/\r?\n\r?\n/);
 
@@ -151,7 +160,7 @@ function parseRawEmail(rawEmail: string): ParsedEmail {
     rawEmail: {
       headers,
     },
-    receivedAt: headers.date ? new Date(headers.date).toISOString() : null,
+    receivedAt: safeDate(headers.date),
     subject: headers.subject || "",
   };
 }
@@ -307,6 +316,7 @@ class SimpleImapClient {
 
 export async function checkLeadsMailbox() {
   const client = new SimpleImapClient();
+  const failed: Record<string, number> = {};
   const mailbox = process.env.IMAP_MAILBOX || "INBOX";
   let found = 0;
   const skipped: Record<string, number> = {};
@@ -346,6 +356,11 @@ export async function checkLeadsMailbox() {
         await client.markSeen(uid);
         seen += 1;
       } catch (error) {
+        const reason =
+          error instanceof Error && error.message
+            ? error.message
+            : "message-failed";
+        failed[reason] = (failed[reason] ?? 0) + 1;
         console.error(
           "Lead mailbox message failed",
           error instanceof Error ? error.message : "Unknown error",
@@ -356,5 +371,14 @@ export async function checkLeadsMailbox() {
     await client.logout();
   }
 
-  return { found, inspected, mailbox, mailboxMessages, processed, seen, skipped };
+  return {
+    failed,
+    found,
+    inspected,
+    mailbox,
+    mailboxMessages,
+    processed,
+    seen,
+    skipped,
+  };
 }
