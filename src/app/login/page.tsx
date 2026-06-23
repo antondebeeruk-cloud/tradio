@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LogIn } from "lucide-react";
-import Image from "next/image";
 import { login } from "@/app/auth/actions";
+import { TradioLogo } from "@/components/tradio-logo";
 
 type LoginPageProps = {
   searchParams: {
@@ -15,13 +15,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
     <main className="flex min-h-screen items-center justify-center bg-mist px-5 py-10 text-ink">
       <section className="surface-pad w-full max-w-md">
         <div className="rounded-lg border border-field bg-white p-4 text-center">
-          <Image
-            alt="Tradio"
-            className="mx-auto h-28 w-full object-contain"
-            height={180}
-            src="/tradio-logo.png"
-            width={260}
-          />
+          <TradioLogo className="justify-center" dark />
           <p className="mt-3 text-sm font-medium text-slate-500">
             Log in to your workspace
           </p>

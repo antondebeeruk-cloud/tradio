@@ -1,16 +1,10 @@
-import Image from "next/image";
+import { TradioLogo } from "@/components/tradio-logo";
 
 export default function PrivacyPolicyPage() {
   return (
     <main className="bg-mist px-5 py-10 text-ink sm:px-8">
       <article className="mx-auto max-w-3xl rounded-lg border border-field bg-white p-6 shadow-sm sm:p-8">
-        <Image
-          alt="Tradio"
-          className="mb-8 h-20 w-48 object-contain"
-          height={160}
-          src="/tradio-logo.png"
-          width={240}
-        />
+        <TradioLogo className="mb-8" dark />
         <p className="eyebrow">Legal placeholder</p>
         <h1 className="mt-3 text-3xl font-semibold">Privacy Policy</h1>
         <p className="mt-4 text-sm leading-6 text-slate-600">

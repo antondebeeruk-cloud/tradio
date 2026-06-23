@@ -1,10 +1,10 @@
-import Image from "next/image";
 import { Check, Clock, CreditCard, ShieldCheck } from "lucide-react";
 import { redirect } from "next/navigation";
 import {
   startFreeTrial,
   startPayPalCheckout,
 } from "@/app/pricing/actions";
+import { TradioLogo } from "@/components/tradio-logo";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,13 +67,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     <main className="min-h-screen bg-mist px-5 py-8 text-ink sm:px-8">
       <section className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-3xl text-center">
-          <Image
-            alt="Tradio"
-            className="mx-auto h-24 w-full object-contain"
-            height={160}
-            src="/tradio-logo.png"
-            width={260}
-          />
+          <TradioLogo className="justify-center" dark />
           <p className="eyebrow mt-8">Choose your package</p>
           <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">
             Start with a trial or unlock Tradio with PayPal.

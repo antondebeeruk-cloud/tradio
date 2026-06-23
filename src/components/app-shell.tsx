@@ -11,10 +11,10 @@ import {
   ShieldCheck,
   UsersRound,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { logout } from "@/app/auth/actions";
 import { AccountMenu } from "@/components/account-menu";
+import { TradioLogo } from "@/components/tradio-logo";
 import { hasAdminAccess } from "@/lib/admin-access";
 import { createClient } from "@/lib/supabase/server";
 
@@ -218,13 +218,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
           </div>
 
           <div className="relative border-b border-white/10 pb-5">
-            <Image
-              alt="Tradio"
-              className="h-16 w-56 object-contain object-left drop-shadow-sm"
-              height={160}
-              src="/tradio-logo.png"
-              width={220}
-            />
+            <TradioLogo />
           </div>
 
           <nav className="relative mt-6 flex flex-col gap-2">
@@ -257,13 +251,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
           {user ? (
             <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#123555] bg-[linear-gradient(135deg,#06233f,#03182d)] px-4 py-3 text-white shadow-sm lg:hidden">
               <Link className="flex min-w-0 items-center gap-3" href="/dashboard">
-                <Image
-                  alt="Tradio"
-                  className="h-10 w-36 object-contain object-left drop-shadow-sm"
-                  height={72}
-                  src="/tradio-logo.png"
-                  width={180}
-                />
+                <TradioLogo className="scale-75 origin-left" />
               </Link>
               <AccountMenu
                 email={email}

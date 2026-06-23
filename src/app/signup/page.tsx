@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
-import Image from "next/image";
 import { signup } from "@/app/auth/actions";
+import { TradioLogo } from "@/components/tradio-logo";
 
 type SignupPageProps = {
   searchParams: {
@@ -14,13 +14,7 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
     <main className="flex min-h-screen items-center justify-center bg-mist px-5 py-10 text-ink">
       <section className="surface-pad w-full max-w-md">
         <div className="rounded-lg border border-field bg-white p-4 text-center">
-          <Image
-            alt="Tradio"
-            className="mx-auto h-28 w-full object-contain"
-            height={180}
-            src="/tradio-logo.png"
-            width={260}
-          />
+          <TradioLogo className="justify-center" dark />
           <p className="mt-3 text-sm font-medium text-slate-500">
             Create your trade workspace
           </p>

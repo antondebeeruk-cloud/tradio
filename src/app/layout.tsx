@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Tradio",
   description: "Customer, quote, invoice, and PDF tools for UK tradespeople.",
   icons: {
-    icon: "/tradio-logo.png",
+    icon: "/tradio-icon.svg",
     apple: "/tradio-logo.png",
   },
 };
