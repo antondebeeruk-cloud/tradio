@@ -127,9 +127,9 @@ export default function Home() {
               </Link>
               <Link
                 className="btn-secondary border-white/20 bg-white/10 text-white hover:bg-white hover:text-ink"
-                href="/login?redirectedFrom=/dashboard/support"
+                href="/login"
               >
-                Ask AI support
+                Log in
               </Link>
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -148,10 +148,6 @@ export default function Home() {
                   </div>
                 ),
               )}
-            </div>
-
-            <div className="mt-6 max-w-2xl lg:hidden">
-              <LandingAiHelper />
             </div>
           </div>
 
@@ -220,12 +216,9 @@ export default function Home() {
                 </div>
               </div>
             </div>
-
-            <div className="absolute -bottom-8 left-6 right-6 hidden lg:block">
-              <LandingAiHelper />
-            </div>
           </div>
         </div>
+        <LandingAiHelper />
       </section>
 
       <section className="bg-white px-5 py-16 text-ink sm:px-8">
