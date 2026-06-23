@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { hasAdminAccess } from "@/lib/admin-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,7 +25,7 @@ export async function requireAdmin() {
     .eq("id", user.id)
     .maybeSingle<AdminProfile>();
 
-  if (profile?.role !== "admin") {
+  if (!hasAdminAccess(profile?.role, user.email)) {
     redirect("/dashboard?message=Admin access is required.");
   }
 

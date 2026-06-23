@@ -15,6 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { logout } from "@/app/auth/actions";
 import { AccountMenu } from "@/components/account-menu";
+import { hasAdminAccess } from "@/lib/admin-access";
 import { createClient } from "@/lib/supabase/server";
 
 const navItems = [
@@ -199,11 +200,12 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
-  const effectivePlan = profile?.role === "admin" ? "admin" : profile?.plan ?? plan;
-  const visibleNavItems = navItems.filter(
-    (item) => !item.adminOnly || profile?.role === "admin",
-  );
   const email = user?.email ?? "";
+  const isAdminUser = hasAdminAccess(profile?.role, email);
+  const effectivePlan = isAdminUser ? "admin" : profile?.plan ?? plan;
+  const visibleNavItems = navItems.filter(
+    (item) => !item.adminOnly || isAdminUser,
+  );
   const displayName = profile?.full_name ?? email;
 
   return (
