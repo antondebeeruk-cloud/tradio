@@ -130,8 +130,13 @@ function parseRawEmail(rawEmail: string): ParsedEmail {
   const bodyParts = parseBody(headers, body);
   const originalRecipient =
     headers["x-original-to"] ||
+    headers["original-recipient"] ||
     headers["delivered-to"] ||
+    headers["x-delivered-to"] ||
     headers["envelope-to"] ||
+    headers["x-envelope-to"] ||
+    headers["apparently-to"] ||
+    headers["resent-to"] ||
     headers.to ||
     "";
 
@@ -198,7 +203,16 @@ class SimpleImapClient {
   }
 
   async selectInbox() {
-    await this.send("SELECT INBOX");
+    const mailbox = process.env.IMAP_MAILBOX || "INBOX";
+    return this.send(`SELECT "${mailbox.replace(/"/g, '\\"')}"`);
+  }
+
+  parseExistsCount(selectResponse: string) {
+    const existsLine = selectResponse
+      .split(/\r?\n/)
+      .find((line) => /\* \d+ EXISTS/i.test(line));
+    const existsMatch = existsLine?.match(/\* (\d+) EXISTS/i);
+    return existsMatch ? Number(existsMatch[1]) : 0;
   }
 
   async searchRecentMessages() {
@@ -293,6 +307,11 @@ class SimpleImapClient {
 
 export async function checkLeadsMailbox() {
   const client = new SimpleImapClient();
+  const mailbox = process.env.IMAP_MAILBOX || "INBOX";
+  let found = 0;
+  const skipped: Record<string, number> = {};
+  let inspected = 0;
+  let mailboxMessages = 0;
   let processed = 0;
   let seen = 0;
 
@@ -300,22 +319,28 @@ export async function checkLeadsMailbox() {
 
   try {
     await client.login();
-    await client.selectInbox();
+    const selectResponse = await client.selectInbox();
+    mailboxMessages = client.parseExistsCount(selectResponse);
     const recentUids = await client.searchRecentMessages();
+    found = recentUids.length;
 
     for (const uid of recentUids) {
       try {
         const rawEmail = await client.fetchRaw(uid);
 
         if (!rawEmail) {
+          skipped.empty_message = (skipped.empty_message ?? 0) + 1;
           continue;
         }
 
+        inspected += 1;
         const parsedEmail = parseRawEmail(rawEmail);
         const result = await ingestLeadEmail(parsedEmail);
 
         if (result.created) {
           processed += 1;
+        } else {
+          skipped[result.reason] = (skipped[result.reason] ?? 0) + 1;
         }
 
         await client.markSeen(uid);
@@ -331,5 +356,5 @@ export async function checkLeadsMailbox() {
     await client.logout();
   }
 
-  return { processed, seen };
+  return { found, inspected, mailbox, mailboxMessages, processed, seen, skipped };
 }

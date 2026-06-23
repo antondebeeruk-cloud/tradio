@@ -20,8 +20,13 @@ export async function GET(request: NextRequest) {
   try {
     const result = await checkLeadsMailbox();
     return NextResponse.json({
+      found: result.found,
+      inspected: result.inspected,
+      mailbox: result.mailbox,
+      mailboxMessages: result.mailboxMessages,
       processed: result.processed,
       seen: result.seen,
+      skipped: result.skipped,
     });
   } catch (error) {
     console.error(

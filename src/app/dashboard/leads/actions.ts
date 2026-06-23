@@ -121,11 +121,19 @@ export async function checkMailboxNow() {
     redirect(`/dashboard/leads?message=${encodeURIComponent("Admin access required.")}`);
   }
 
-  let processed = 0;
+  let message = "";
 
   try {
     const result = await checkLeadsMailbox();
-    processed = result.processed;
+    const skippedCount = Object.values(result.skipped).reduce(
+      (total, count) => total + count,
+      0,
+    );
+    message = `${result.processed} email${
+      result.processed === 1 ? "" : "s"
+    } processed. ${result.mailboxMessages} in ${result.mailbox}, ${
+      result.found
+    } found, ${result.inspected} inspected, ${skippedCount} skipped.`;
   } catch (error) {
     redirect(
       `/dashboard/leads?message=${encodeURIComponent(
@@ -135,11 +143,7 @@ export async function checkMailboxNow() {
   }
 
   revalidatePath("/dashboard/leads");
-  redirect(
-    `/dashboard/leads?message=${encodeURIComponent(
-      `${processed} email${processed === 1 ? "" : "s"} processed.`,
-    )}`,
-  );
+  redirect(`/dashboard/leads?message=${encodeURIComponent(message)}`);
 }
 
 export async function convertLeadToCustomer(formData: FormData) {
