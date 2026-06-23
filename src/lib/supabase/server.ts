@@ -1,0 +1,44 @@
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+export function createClient() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Missing Supabase environment variables.");
+  }
+
+  if (
+    supabaseUrl.includes("your-project-ref") ||
+    supabaseUrl.includes("abcxyz") ||
+    supabaseAnonKey === "your-anon-public-key" ||
+    supabaseAnonKey === "eyJ..."
+  ) {
+    throw new Error("Supabase environment variables still contain example values.");
+  }
+
+  const cookieStore = cookies();
+
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
+      },
+      set(name: string, value: string, options: CookieOptions) {
+        try {
+          cookieStore.set({ name, value, ...options });
+        } catch {
+          // Server Components cannot set cookies, but middleware and actions can.
+        }
+      },
+      remove(name: string, options: CookieOptions) {
+        try {
+          cookieStore.set({ name, value: "", ...options });
+        } catch {
+          // Server Components cannot set cookies, but middleware and actions can.
+        }
+      },
+    },
+  });
+}

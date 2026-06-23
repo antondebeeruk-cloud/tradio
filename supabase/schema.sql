@@ -1,0 +1,233 @@
+create extension if not exists pgcrypto;
+
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  full_name text,
+  business_name text,
+  trade text,
+  phone text,
+  logo_url text,
+  business_address_line_1 text,
+  business_address_line_2 text,
+  business_town text,
+  business_postcode text,
+  vat_number text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.customers (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  name text not null,
+  email text,
+  phone text,
+  address_line_1 text,
+  address_line_2 text,
+  town text,
+  postcode text,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (id, user_id)
+);
+
+create table if not exists public.quotes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  customer_id uuid not null,
+  quote_number text not null,
+  status text not null default 'draft'
+    check (status in ('draft', 'sent', 'accepted', 'rejected')),
+  issue_date date not null default current_date,
+  expiry_date date,
+  subtotal numeric(12, 2) not null default 0,
+  vat_rate numeric(5, 2) not null default 0,
+  vat_amount numeric(12, 2) not null default 0,
+  total numeric(12, 2) not null default 0,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (id, user_id),
+  unique (user_id, quote_number),
+  foreign key (customer_id, user_id)
+    references public.customers (id, user_id)
+    on delete restrict
+);
+
+create table if not exists public.quote_items (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  quote_id uuid not null,
+  description text not null,
+  quantity numeric(10, 2) not null default 1 check (quantity > 0),
+  unit_price numeric(12, 2) not null default 0 check (unit_price >= 0),
+  line_total numeric(12, 2) not null default 0,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  foreign key (quote_id, user_id)
+    references public.quotes (id, user_id)
+    on delete cascade
+);
+
+create table if not exists public.invoices (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  customer_id uuid not null,
+  quote_id uuid,
+  invoice_number text not null,
+  status text not null default 'unpaid'
+    check (status in ('unpaid', 'paid', 'overdue')),
+  issue_date date not null default current_date,
+  due_date date,
+  subtotal numeric(12, 2) not null default 0,
+  vat_rate numeric(5, 2) not null default 0,
+  vat_amount numeric(12, 2) not null default 0,
+  total numeric(12, 2) not null default 0,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (id, user_id),
+  unique (user_id, invoice_number),
+  unique (user_id, quote_id),
+  foreign key (customer_id, user_id)
+    references public.customers (id, user_id)
+    on delete restrict,
+  foreign key (quote_id, user_id)
+    references public.quotes (id, user_id)
+    on delete restrict
+);
+
+create table if not exists public.invoice_items (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  invoice_id uuid not null,
+  description text not null,
+  quantity numeric(10, 2) not null default 1 check (quantity > 0),
+  unit_price numeric(12, 2) not null default 0 check (unit_price >= 0),
+  line_total numeric(12, 2) not null default 0,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  foreign key (invoice_id, user_id)
+    references public.invoices (id, user_id)
+    on delete cascade
+);
+
+create index if not exists customers_user_id_idx on public.customers (user_id);
+create index if not exists quotes_user_id_idx on public.quotes (user_id);
+create index if not exists quotes_customer_id_idx on public.quotes (customer_id);
+create index if not exists quote_items_quote_id_idx on public.quote_items (quote_id);
+create index if not exists invoices_user_id_idx on public.invoices (user_id);
+create index if not exists invoices_customer_id_idx on public.invoices (customer_id);
+create index if not exists invoice_items_invoice_id_idx on public.invoice_items (invoice_id);
+
+alter table public.profiles enable row level security;
+alter table public.customers enable row level security;
+alter table public.quotes enable row level security;
+alter table public.quote_items enable row level security;
+alter table public.invoices enable row level security;
+alter table public.invoice_items enable row level security;
+
+create policy "Users can view their own profile"
+  on public.profiles for select
+  using (id = auth.uid());
+
+create policy "Users can create their own profile"
+  on public.profiles for insert
+  with check (id = auth.uid());
+
+create policy "Users can update their own profile"
+  on public.profiles for update
+  using (id = auth.uid())
+  with check (id = auth.uid());
+
+create policy "Users can delete their own profile"
+  on public.profiles for delete
+  using (id = auth.uid());
+
+create policy "Users can view their own customers"
+  on public.customers for select
+  using (user_id = auth.uid());
+
+create policy "Users can create their own customers"
+  on public.customers for insert
+  with check (user_id = auth.uid());
+
+create policy "Users can update their own customers"
+  on public.customers for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+create policy "Users can delete their own customers"
+  on public.customers for delete
+  using (user_id = auth.uid());
+
+create policy "Users can view their own quotes"
+  on public.quotes for select
+  using (user_id = auth.uid());
+
+create policy "Users can create their own quotes"
+  on public.quotes for insert
+  with check (user_id = auth.uid());
+
+create policy "Users can update their own quotes"
+  on public.quotes for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+create policy "Users can delete their own quotes"
+  on public.quotes for delete
+  using (user_id = auth.uid());
+
+create policy "Users can view their own quote items"
+  on public.quote_items for select
+  using (user_id = auth.uid());
+
+create policy "Users can create their own quote items"
+  on public.quote_items for insert
+  with check (user_id = auth.uid());
+
+create policy "Users can update their own quote items"
+  on public.quote_items for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+create policy "Users can delete their own quote items"
+  on public.quote_items for delete
+  using (user_id = auth.uid());
+
+create policy "Users can view their own invoices"
+  on public.invoices for select
+  using (user_id = auth.uid());
+
+create policy "Users can create their own invoices"
+  on public.invoices for insert
+  with check (user_id = auth.uid());
+
+create policy "Users can update their own invoices"
+  on public.invoices for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+create policy "Users can delete their own invoices"
+  on public.invoices for delete
+  using (user_id = auth.uid());
+
+create policy "Users can view their own invoice items"
+  on public.invoice_items for select
+  using (user_id = auth.uid());
+
+create policy "Users can create their own invoice items"
+  on public.invoice_items for insert
+  with check (user_id = auth.uid());
+
+create policy "Users can update their own invoice items"
+  on public.invoice_items for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+create policy "Users can delete their own invoice items"
+  on public.invoice_items for delete
+  using (user_id = auth.uid());
