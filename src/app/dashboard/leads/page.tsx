@@ -20,6 +20,7 @@ import { AppShell } from "@/components/app-shell";
 import { CopyButton } from "@/components/copy-button";
 import { formatDate } from "@/lib/documents";
 import { generateLeadEmail } from "@/lib/lead-email";
+import { htmlToText } from "@/lib/leads/parser";
 import { isAdmin } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -92,7 +93,7 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const { data: leads, error } = await supabase
     .from("leads")
     .select(
-      "id, customer_name, source_platform, subject, phone, postcode, status, received_at, from_email, from_name, job_description, body_text, original_recipient",
+      "id, customer_name, source_platform, subject, phone, postcode, status, received_at, from_email, from_name, job_description, body_text, body_html, original_recipient",
     )
     .eq("user_id", user.id)
     .order("received_at", { ascending: false });
@@ -240,8 +241,11 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                           {lead.postcode || "Not found"}
                         </p>
                       </div>
-                      <p className="whitespace-pre-line rounded-lg bg-mist p-4 text-sm leading-6 text-slate-700">
-                        {lead.job_description || lead.body_text || "No message body found."}
+                      <p className="max-h-[28rem] overflow-auto whitespace-pre-line rounded-lg bg-mist p-4 text-sm leading-6 text-slate-700">
+                        {lead.job_description ||
+                          lead.body_text ||
+                          htmlToText(lead.body_html) ||
+                          "No message body found."}
                       </p>
                     </div>
                   </details>

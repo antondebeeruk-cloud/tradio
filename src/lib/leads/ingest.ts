@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "crypto";
 import { extractEmailAddress, normalizeEmailAddress } from "@/lib/lead-email";
-import { parseLeadEmail } from "@/lib/leads/parser";
+import { htmlToText, parseLeadEmail } from "@/lib/leads/parser";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type LeadEmailPayload = {
@@ -81,7 +81,7 @@ export async function ingestLeadEmail(payload: LeadEmailPayload) {
   const emailMessageId = payload.messageId || fallbackMessageId(payload);
   const { data: existing, error: existingError } = await supabase
     .from("leads")
-    .select("id")
+    .select("id, body_text, job_description, phone, postcode")
     .eq("email_message_id", emailMessageId)
     .maybeSingle();
 
@@ -89,7 +89,37 @@ export async function ingestLeadEmail(payload: LeadEmailPayload) {
     throw new Error(existingError.message);
   }
 
+  const bodyText = payload.bodyText || htmlToText(payload.bodyHtml);
+  const parsed = parseLeadEmail({
+    bodyText,
+    fromEmail: payload.fromEmail,
+    fromName: payload.fromName,
+    subject: payload.subject,
+  });
+
   if (existing) {
+    if (
+      (!existing.body_text && bodyText) ||
+      (!existing.job_description && parsed.job_description) ||
+      (!existing.phone && parsed.phone) ||
+      (!existing.postcode && parsed.postcode)
+    ) {
+      const { error: updateError } = await supabase
+        .from("leads")
+        .update({
+          body_html: payload.bodyHtml || null,
+          body_text: bodyText || null,
+          raw_email: payload.rawEmail ?? {},
+          subject: payload.subject || null,
+          ...parsed,
+        })
+        .eq("id", existing.id);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+    }
+
     return {
       created: false,
       reason: "already-processed",
@@ -97,16 +127,9 @@ export async function ingestLeadEmail(payload: LeadEmailPayload) {
     };
   }
 
-  const parsed = parseLeadEmail({
-    bodyText: payload.bodyText,
-    fromEmail: payload.fromEmail,
-    fromName: payload.fromName,
-    subject: payload.subject,
-  });
-
   const { error } = await supabase.from("leads").insert({
     body_html: payload.bodyHtml || null,
-    body_text: payload.bodyText || null,
+    body_text: bodyText || null,
     email_message_id: emailMessageId,
     from_email: normalizeEmailAddress(payload.fromEmail),
     from_name: payload.fromName || null,

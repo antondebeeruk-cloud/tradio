@@ -23,14 +23,47 @@ function decodeTransfer(body: string, encoding: string) {
   }
 
   if (encoding.includes("quoted-printable")) {
-    return body
+    const binary = body
       .replace(/=\r?\n/g, "")
       .replace(/=([A-F0-9]{2})/gi, (_, hex: string) =>
         String.fromCharCode(parseInt(hex, 16)),
       );
+
+    return Buffer.from(binary, "binary").toString("utf8");
   }
 
   return body.trim();
+}
+
+function decodeMimeWords(value?: string) {
+  if (!value) {
+    return "";
+  }
+
+  return value.replace(
+    /=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi,
+    (_, charset: string, encoding: string, encoded: string) => {
+      const normalizedCharset = charset.toLowerCase();
+      const buffer =
+        encoding.toUpperCase() === "B"
+          ? Buffer.from(encoded, "base64")
+          : Buffer.from(
+              encoded
+                .replace(/_/g, " ")
+                .replace(/=([A-F0-9]{2})/gi, (_hexMatch, hex: string) =>
+                  String.fromCharCode(parseInt(hex, 16)),
+                ),
+              "binary",
+            );
+
+      return buffer.toString(
+        normalizedCharset.includes("iso-8859-1") ||
+          normalizedCharset.includes("latin1")
+          ? "latin1"
+          : "utf8",
+      );
+    },
+  );
 }
 
 function parseHeaders(rawHeaders: string) {
@@ -99,7 +132,10 @@ function parseAddressName(value?: string) {
     return "";
   }
 
-  const withoutEmail = value.replace(/<[^>]+>/g, "").replace(/"/g, "").trim();
+  const withoutEmail = decodeMimeWords(value)
+    .replace(/<[^>]+>/g, "")
+    .replace(/"/g, "")
+    .trim();
   return withoutEmail || "";
 }
 
@@ -163,6 +199,20 @@ function parseBody(headers: Record<string, string>, body: string) {
       partHeaders["content-transfer-encoding"]?.toLowerCase() ?? "";
     const decodedPart = decodeTransfer(partBody, partEncoding);
 
+    if (partType.includes("multipart/")) {
+      const nested = parseBody(partHeaders, partBody);
+
+      if (!bodyText && nested.bodyText) {
+        bodyText = nested.bodyText;
+      }
+
+      if (!bodyHtml && nested.bodyHtml) {
+        bodyHtml = nested.bodyHtml;
+      }
+
+      continue;
+    }
+
     if (!bodyText && partType.includes("text/plain")) {
       bodyText = decodedPart;
     }
@@ -193,7 +243,7 @@ function parseRawEmail(rawEmail: string): ParsedEmail {
       headers,
     },
     receivedAt: safeDate(headers.date),
-    subject: headers.subject || "",
+    subject: decodeMimeWords(headers.subject) || "",
   };
 }
 
