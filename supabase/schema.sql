@@ -12,6 +12,8 @@ create table if not exists public.profiles (
   business_town text,
   business_postcode text,
   vat_number text,
+  lead_email_slug text unique,
+  lead_email_address text unique,
   role text not null default 'user'
     check (role in ('user', 'admin')),
   plan text,
@@ -151,6 +153,29 @@ create table if not exists public.jobs (
     on delete set null
 );
 
+create table if not exists public.leads (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  lead_email_address text,
+  original_recipient text,
+  from_email text,
+  from_name text,
+  subject text,
+  body_text text,
+  body_html text,
+  phone text,
+  customer_name text,
+  postcode text,
+  job_description text,
+  source_platform text,
+  status text not null default 'new'
+    check (status in ('new', 'contacted', 'quoted', 'won', 'lost', 'spam')),
+  raw_email jsonb,
+  email_message_id text unique,
+  received_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists customers_user_id_idx on public.customers (user_id);
 create index if not exists quotes_user_id_idx on public.quotes (user_id);
 create index if not exists quotes_customer_id_idx on public.quotes (customer_id);
@@ -161,6 +186,10 @@ create index if not exists invoice_items_invoice_id_idx on public.invoice_items 
 create index if not exists jobs_user_id_idx on public.jobs (user_id);
 create index if not exists jobs_customer_id_idx on public.jobs (customer_id);
 create index if not exists jobs_status_idx on public.jobs (user_id, status);
+create index if not exists leads_user_id_idx on public.leads (user_id);
+create index if not exists leads_status_idx on public.leads (user_id, status);
+create index if not exists leads_received_at_idx on public.leads (user_id, received_at desc);
+create index if not exists leads_original_recipient_idx on public.leads (original_recipient);
 
 alter table public.profiles enable row level security;
 alter table public.customers enable row level security;
@@ -169,6 +198,7 @@ alter table public.quote_items enable row level security;
 alter table public.invoices enable row level security;
 alter table public.invoice_items enable row level security;
 alter table public.jobs enable row level security;
+alter table public.leads enable row level security;
 
 create or replace function public.current_profile_role()
 returns text
@@ -405,3 +435,20 @@ create policy "Users can delete their own jobs"
         )
     )
   );
+
+create policy "Users can view their own leads"
+  on public.leads for select
+  using (user_id = auth.uid());
+
+create policy "Users can create their own leads"
+  on public.leads for insert
+  with check (user_id = auth.uid());
+
+create policy "Users can update their own leads"
+  on public.leads for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+create policy "Users can delete their own leads"
+  on public.leads for delete
+  using (user_id = auth.uid());

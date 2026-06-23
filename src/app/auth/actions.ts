@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { generateLeadEmail } from "@/lib/lead-email";
 import { createClient } from "@/lib/supabase/server";
 
 function getString(formData: FormData, key: string) {
@@ -63,10 +64,17 @@ export async function signup(formData: FormData) {
   }
 
   if (data.session && data.user) {
+    const leadEmail = generateLeadEmail({
+      businessName,
+      email,
+      fullName,
+    });
+
     await supabase.from("profiles").upsert({
       id: data.user.id,
       full_name: fullName || null,
       business_name: businessName || null,
+      ...leadEmail,
     });
 
     revalidatePath("/", "layout");

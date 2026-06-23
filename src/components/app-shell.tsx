@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Lock,
   LogOut,
+  MailPlus,
   BarChart3,
   BriefcaseBusiness,
   ReceiptText,
@@ -18,6 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 const navItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Customers", href: "/customers", icon: UsersRound },
+  { label: "Leads", href: "/dashboard/leads", icon: MailPlus },
   { label: "Quotes", href: "/quotes", icon: FileText },
   { label: "Invoices", href: "/invoices", icon: ReceiptText },
   {
@@ -39,6 +41,7 @@ type AppShellProps = {
   active:
     | "dashboard"
     | "customers"
+    | "leads"
     | "quotes"
     | "invoices"
     | "reports"
@@ -55,6 +58,7 @@ const eliteUpgradeMessage =
 const activeByHref: Record<string, AppShellProps["active"]> = {
   "/customers": "customers",
   "/dashboard": "dashboard",
+  "/dashboard/leads": "leads",
   "/dashboard/jobs": "jobs",
   "/dashboard/reports": "reports",
   "/invoices": "invoices",

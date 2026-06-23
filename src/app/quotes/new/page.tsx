@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type NewQuotePageProps = {
   searchParams: {
+    customerId?: string;
     message?: string;
   };
 };
@@ -55,6 +56,7 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
             action={createQuote}
             customers={customers}
             message={searchParams.message}
+            selectedCustomerId={searchParams.customerId}
           />
         ) : (
           <section className="empty-state">

@@ -20,6 +20,7 @@ type QuoteFormProps = {
   action: (formData: FormData) => Promise<void>;
   customers: CustomerOption[];
   message?: string;
+  selectedCustomerId?: string;
 };
 
 const fieldClass =
@@ -46,7 +47,12 @@ function createBlankItem(id: string): QuoteItem {
   };
 }
 
-export function QuoteForm({ action, customers, message }: QuoteFormProps) {
+export function QuoteForm({
+  action,
+  customers,
+  message,
+  selectedCustomerId,
+}: QuoteFormProps) {
   const [items, setItems] = useState<QuoteItem[]>([createBlankItem("item-1")]);
   const [vatRate, setVatRate] = useState("20");
   const nextItemId = useRef(2);
@@ -92,6 +98,7 @@ export function QuoteForm({ action, customers, message }: QuoteFormProps) {
             </label>
             <select
               className={fieldClass}
+              defaultValue={selectedCustomerId ?? ""}
               id="customer_id"
               name="customer_id"
               required

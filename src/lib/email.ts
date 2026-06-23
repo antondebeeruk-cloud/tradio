@@ -1,3 +1,5 @@
+import { sendSmtpEmail } from "@/lib/smtp";
+
 type SendEmailInput = {
   attachment: Buffer;
   filename: string;
@@ -15,36 +17,24 @@ export async function sendEmailWithPdf({
   text,
   to,
 }: SendEmailInput) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
+  const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
 
-  if (!apiKey || !from) {
-    throw new Error("Missing RESEND_API_KEY or EMAIL_FROM.");
+  if (!from) {
+    throw new Error("Missing EMAIL_FROM or SMTP_USER.");
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    body: JSON.stringify({
-      attachments: [
-        {
-          content: attachment.toString("base64"),
-          filename,
-        },
-      ],
-      from,
-      html,
-      subject,
-      text,
-      to,
-    }),
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    method: "POST",
+  await sendSmtpEmail({
+    attachments: [
+      {
+        content: attachment,
+        contentType: "application/pdf",
+        filename,
+      },
+    ],
+    from,
+    html,
+    subject,
+    text,
+    to,
   });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(body || "Email could not be sent.");
-  }
 }
