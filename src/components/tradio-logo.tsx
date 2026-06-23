@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 type TradioLogoProps = {
   className?: string;
   dark?: boolean;
@@ -15,14 +13,11 @@ export function TradioLogo({
 
   return (
     <div className={`inline-flex items-center gap-3 ${className}`}>
-      <Image
+      <img
         alt=""
         aria-hidden="true"
         className="h-12 w-12 shrink-0 rounded-lg object-cover shadow-[0_10px_22px_rgba(7,26,46,0.18)]"
-        height={96}
-        priority
         src="/tradio-mark.png"
-        width={96}
       />
 
       {compact ? null : (
