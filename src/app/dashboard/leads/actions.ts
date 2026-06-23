@@ -121,14 +121,11 @@ export async function checkMailboxNow() {
     redirect(`/dashboard/leads?message=${encodeURIComponent("Admin access required.")}`);
   }
 
+  let processed = 0;
+
   try {
     const result = await checkLeadsMailbox();
-    revalidatePath("/dashboard/leads");
-    redirect(
-      `/dashboard/leads?message=${encodeURIComponent(
-        `${result.processed} email${result.processed === 1 ? "" : "s"} processed.`,
-      )}`,
-    );
+    processed = result.processed;
   } catch (error) {
     redirect(
       `/dashboard/leads?message=${encodeURIComponent(
@@ -136,6 +133,13 @@ export async function checkMailboxNow() {
       )}`,
     );
   }
+
+  revalidatePath("/dashboard/leads");
+  redirect(
+    `/dashboard/leads?message=${encodeURIComponent(
+      `${processed} email${processed === 1 ? "" : "s"} processed.`,
+    )}`,
+  );
 }
 
 export async function convertLeadToCustomer(formData: FormData) {
