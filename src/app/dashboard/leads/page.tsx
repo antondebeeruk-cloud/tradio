@@ -3,6 +3,7 @@ import {
   MailPlus,
   RefreshCw,
   ShieldAlert,
+  Trash2,
   UserPlus,
 } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -11,6 +12,7 @@ import {
   convertLeadToCustomer,
   convertLeadToQuote,
   createMockLead,
+  deleteLead,
   markLeadAsSpam,
   updateLeadStatus,
 } from "@/app/dashboard/leads/actions";
@@ -261,6 +263,13 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                       <button className="btn-secondary w-full text-slate-600 hover:text-ink">
                         <ShieldAlert aria-hidden="true" size={16} />
                         Mark as spam
+                      </button>
+                    </form>
+                    <form action={deleteLead}>
+                      <input name="id" type="hidden" value={lead.id} />
+                      <button className="btn-secondary w-full text-slate-600 hover:border-[#ffd8c2] hover:bg-[#fff5ef] hover:text-[#d94800]">
+                        <Trash2 aria-hidden="true" size={16} />
+                        Delete
                       </button>
                     </form>
                   </div>

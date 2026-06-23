@@ -56,6 +56,28 @@ export async function markLeadAsSpam(formData: FormData) {
   await updateLeadStatus(formData);
 }
 
+export async function deleteLead(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = getString(formData, "id");
+
+  if (!id) {
+    redirect(`/dashboard/leads?message=${encodeURIComponent("Lead not found.")}`);
+  }
+
+  const { error } = await supabase
+    .from("leads")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/dashboard/leads?message=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard/leads");
+  redirect(`/dashboard/leads?message=${encodeURIComponent("Lead deleted")}`);
+}
+
 async function ensureLeadEmail() {
   const { supabase, user } = await requireUser();
   const { data: profile, error } = await supabase
@@ -139,13 +161,16 @@ export async function checkMailboxNow() {
     const failedReasons = Object.entries(result.failed)
       .map(([reason, count]) => `${reason}: ${count}`)
       .join(", ");
+    const recipients = result.recipients.length
+      ? ` Recipients seen: ${result.recipients.join(", ")}.`
+      : "";
     message = `${result.processed} email${
       result.processed === 1 ? "" : "s"
     } processed. ${result.mailboxMessages} in ${result.mailbox}, ${
       result.found
     } found, ${result.inspected} inspected, ${skippedCount} skipped, ${failedCount} failed.${
       skippedReasons ? ` Skipped: ${skippedReasons}.` : ""
-    }${failedReasons ? ` Failed: ${failedReasons}.` : ""}`;
+    }${failedReasons ? ` Failed: ${failedReasons}.` : ""}${recipients}`;
   } catch (error) {
     redirect(
       `/dashboard/leads?message=${encodeURIComponent(
