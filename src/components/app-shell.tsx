@@ -199,10 +199,10 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
             T
           </div>
 
-          <div className="relative rounded-lg border border-white/10 bg-white p-3 shadow-sm">
+          <div className="relative px-1 py-2">
             <Image
               alt="Tradio"
-              className="h-20 w-full object-contain"
+              className="h-20 w-full object-contain drop-shadow-sm"
               height={160}
               src="/tradio-logo.png"
               width={220}
@@ -239,15 +239,13 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
           {user ? (
             <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#123555] bg-[linear-gradient(135deg,#06233f,#03182d)] px-4 py-3 text-white shadow-sm lg:hidden">
               <Link className="flex min-w-0 items-center gap-3" href="/dashboard">
-                <span className="rounded-lg bg-white px-2 py-1">
-                  <Image
-                    alt="Tradio"
-                    className="h-9 w-24 object-contain"
-                    height={72}
-                    src="/tradio-logo.png"
-                    width={140}
-                  />
-                </span>
+                <Image
+                  alt="Tradio"
+                  className="h-10 w-36 object-contain object-left drop-shadow-sm"
+                  height={72}
+                  src="/tradio-logo.png"
+                  width={180}
+                />
               </Link>
               <AccountMenu
                 email={email}
