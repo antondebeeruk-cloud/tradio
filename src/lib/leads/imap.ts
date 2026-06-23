@@ -201,18 +201,20 @@ class SimpleImapClient {
     await this.send("SELECT INBOX");
   }
 
-  async searchUnread() {
-    const response = await this.send("UID SEARCH UNSEEN");
+  async searchRecentMessages() {
+    const response = await this.send("UID SEARCH ALL");
     const searchLine = response
       .split(/\r?\n/)
       .find((line) => line.toUpperCase().startsWith("* SEARCH"));
 
-    return searchLine
+    const uids = searchLine
       ? searchLine
           .replace(/^\* SEARCH\s*/i, "")
           .split(/\s+/)
           .filter(Boolean)
       : [];
+
+    return uids.slice(-50);
   }
 
   async fetchRaw(uid: string) {
@@ -299,9 +301,9 @@ export async function checkLeadsMailbox() {
   try {
     await client.login();
     await client.selectInbox();
-    const unreadUids = await client.searchUnread();
+    const recentUids = await client.searchRecentMessages();
 
-    for (const uid of unreadUids) {
+    for (const uid of recentUids) {
       try {
         const rawEmail = await client.fetchRaw(uid);
 
