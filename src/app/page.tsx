@@ -9,8 +9,8 @@ import {
   ReceiptText,
   UsersRound,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { TradioLogo } from "@/components/tradio-logo";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -100,14 +100,7 @@ export default async function Home() {
 
         <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
           <Link href="/">
-            <Image
-              alt="Tradio"
-              className="h-14 w-48 object-contain object-left"
-              height={140}
-              priority
-              src="/tradio-logo.png"
-              width={260}
-            />
+            <TradioLogo />
           </Link>
           <nav className="flex items-center gap-2">
             {user ? (
