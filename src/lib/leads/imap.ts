@@ -319,6 +319,7 @@ export async function checkLeadsMailbox() {
   const failed: Record<string, number> = {};
   const mailbox = process.env.IMAP_MAILBOX || "INBOX";
   let found = 0;
+  const recipients: string[] = [];
   const skipped: Record<string, number> = {};
   let inspected = 0;
   let mailboxMessages = 0;
@@ -353,6 +354,10 @@ export async function checkLeadsMailbox() {
           skipped[result.reason] = (skipped[result.reason] ?? 0) + 1;
         }
 
+        if (result.recipient && !recipients.includes(result.recipient)) {
+          recipients.push(result.recipient);
+        }
+
         await client.markSeen(uid);
         seen += 1;
       } catch (error) {
@@ -378,6 +383,7 @@ export async function checkLeadsMailbox() {
     mailbox,
     mailboxMessages,
     processed,
+    recipients: recipients.slice(0, 8),
     seen,
     skipped,
   };

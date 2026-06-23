@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
       mailbox: result.mailbox,
       mailboxMessages: result.mailboxMessages,
       processed: result.processed,
+      recipients: result.recipients,
       seen: result.seen,
       skipped: result.skipped,
     });

@@ -24,26 +24,58 @@ function fallbackMessageId(payload: LeadEmailPayload) {
   return `generated-${hash}`;
 }
 
+function leadSlugFromAddress(address: string) {
+  return address.split("@")[0] ?? "";
+}
+
+function maskAddress(address: string) {
+  const [local, domain] = address.split("@");
+
+  if (!local || !domain) {
+    return "unknown";
+  }
+
+  return `${local.slice(0, 4)}...@${domain}`;
+}
+
 export async function ingestLeadEmail(payload: LeadEmailPayload) {
   const originalRecipient = extractEmailAddress(payload.originalRecipient);
 
   if (!originalRecipient) {
-    return { created: false, reason: "missing-recipient" };
+    return { created: false, reason: "missing-recipient", recipient: "" };
   }
 
   const supabase = createAdminClient();
-  const { data: profile, error: profileError } = await supabase
+  const { data: addressProfile, error: profileError } = await supabase
     .from("profiles")
     .select("id, lead_email_address")
-    .eq("lead_email_address", originalRecipient)
+    .ilike("lead_email_address", originalRecipient)
     .maybeSingle();
 
   if (profileError) {
     throw new Error(profileError.message);
   }
 
+  const { data: slugProfile, error: slugError } = addressProfile
+    ? { data: null, error: null }
+    : await supabase
+        .from("profiles")
+        .select("id, lead_email_address")
+        .eq("lead_email_slug", leadSlugFromAddress(originalRecipient))
+        .maybeSingle();
+
+  if (slugError) {
+    throw new Error(slugError.message);
+  }
+
+  const profile = addressProfile ?? slugProfile;
+
   if (!profile) {
-    return { created: false, reason: "unknown-recipient" };
+    return {
+      created: false,
+      reason: "unknown-recipient",
+      recipient: maskAddress(originalRecipient),
+    };
   }
 
   const emailMessageId = payload.messageId || fallbackMessageId(payload);
@@ -58,7 +90,11 @@ export async function ingestLeadEmail(payload: LeadEmailPayload) {
   }
 
   if (existing) {
-    return { created: false, reason: "already-processed" };
+    return {
+      created: false,
+      reason: "already-processed",
+      recipient: maskAddress(originalRecipient),
+    };
   }
 
   const parsed = parseLeadEmail({
@@ -87,7 +123,11 @@ export async function ingestLeadEmail(payload: LeadEmailPayload) {
     throw new Error(error.message);
   }
 
-  return { created: true, reason: "created" };
+  return {
+    created: true,
+    reason: "created",
+    recipient: maskAddress(originalRecipient),
+  };
 }
 
 export async function createMockLeadForUser({
