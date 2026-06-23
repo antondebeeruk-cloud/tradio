@@ -48,7 +48,7 @@ export async function signup(formData: FormData) {
       password,
       options: {
         emailRedirectTo: origin
-          ? `${origin}/auth/callback?next=/dashboard`
+          ? `${origin}/auth/callback?next=/pricing`
           : undefined,
         data: {
           full_name: fullName,
@@ -70,7 +70,7 @@ export async function signup(formData: FormData) {
     });
 
     revalidatePath("/", "layout");
-    redirect("/dashboard");
+    redirect("/pricing");
   }
 
   redirect(

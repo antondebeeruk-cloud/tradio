@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { hasActiveSubscription } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Home() {
@@ -7,5 +8,15 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  redirect(user ? "/dashboard" : "/login");
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan, subscription_status, trial_expires_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  redirect(hasActiveSubscription(profile) ? "/dashboard" : "/pricing");
 }

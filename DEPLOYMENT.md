@@ -29,9 +29,15 @@ NEXT_PUBLIC_SUPABASE_URL=your Supabase Project URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your Supabase anon public key
 RESEND_API_KEY=your Resend API key
 EMAIL_FROM=Tradio <noreply@yourdomain.com>
+PAYPAL_ENVIRONMENT=live
+PAYPAL_CLIENT_ID=your PayPal client ID
+PAYPAL_CLIENT_SECRET=your PayPal client secret
+PAYPAL_LITE_PLAN_ID=your PayPal Lite subscription plan ID
+PAYPAL_ELITE_PLAN_ID=your PayPal Elite subscription plan ID
 ```
 
 `RESEND_API_KEY` and `EMAIL_FROM` are needed for emailing quote and invoice PDFs.
+The PayPal values are needed for Lite and Elite checkout.
 
 ## 4. Update Supabase auth URLs
 

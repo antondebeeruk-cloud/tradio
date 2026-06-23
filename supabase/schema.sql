@@ -12,6 +12,10 @@ create table if not exists public.profiles (
   business_town text,
   business_postcode text,
   vat_number text,
+  plan text,
+  subscription_status text,
+  trial_expires_at timestamptz,
+  paypal_subscription_id text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
