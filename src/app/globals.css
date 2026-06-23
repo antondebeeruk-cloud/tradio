@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: light;
-  background: #f4f7fb;
+  background: #eef4f9;
 }
 
 * {
@@ -19,8 +19,8 @@ body {
   min-height: 100%;
   margin: 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(244, 247, 251, 0.96)),
-    #f4f7fb;
+    linear-gradient(135deg, rgba(6, 35, 63, 0.06), rgba(255, 90, 0, 0.04)),
+    #eef4f9;
   color: #071a2e;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -48,19 +48,19 @@ a {
 
 @layer components {
   .app-page-header {
-    @apply border-b border-field bg-white px-5 py-5 sm:px-8 lg:py-6;
+    @apply border-b border-field bg-white px-4 py-5 sm:px-6 lg:px-8 lg:py-6;
   }
 
   .app-page-body {
-    @apply px-5 py-6 sm:px-8 lg:py-8;
+    @apply px-4 py-5 pb-28 sm:px-6 lg:px-8 lg:py-8;
   }
 
   .eyebrow {
-    @apply text-sm font-semibold uppercase tracking-[0.12em] text-copper;
+    @apply text-xs font-bold uppercase tracking-[0.12em] text-copper;
   }
 
   .page-title {
-    @apply mt-2 max-w-3xl text-2xl font-semibold tracking-normal text-ink sm:text-3xl;
+    @apply mt-2 max-w-3xl text-2xl font-bold tracking-normal text-ink sm:text-3xl;
   }
 
   .surface {
@@ -68,31 +68,31 @@ a {
   }
 
   .surface-pad {
-    @apply rounded-lg border border-field bg-white p-5 shadow-panel sm:p-6;
+    @apply rounded-lg border border-field bg-white p-4 shadow-panel sm:p-6;
   }
 
   .section-bar {
-    @apply border-b border-field px-5 py-4;
+    @apply border-b border-field px-4 py-4 sm:px-5;
   }
 
   .field-control {
-    @apply mt-2 w-full rounded-lg border border-field bg-white px-3 py-2 text-sm outline-none transition placeholder:text-slate-400 focus:border-copper focus:ring-2 focus:ring-[#ffd8c2];
+    @apply mt-2 w-full rounded-lg border border-field bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-copper focus:ring-2 focus:ring-[#ffd8c2];
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#02172b] focus:outline-none focus:ring-2 focus:ring-moss focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#02172b] focus:outline-none focus:ring-2 focus:ring-moss focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-copper px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e94f00] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-copper px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#e94f00] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-field bg-white px-3 py-2 text-sm font-semibold text-ink transition hover:border-copper hover:bg-[#fff5ef] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-field bg-white px-3 py-2.5 text-sm font-bold text-ink transition hover:border-copper hover:bg-[#fff5ef] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
   }
 
   .status-pill {
-    @apply rounded-lg px-3 py-1 text-xs font-semibold capitalize;
+    @apply rounded-lg px-3 py-1 text-xs font-bold capitalize;
   }
 
   .empty-state {
