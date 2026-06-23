@@ -4,7 +4,7 @@
 
 :root {
   color-scheme: light;
-  background: #eef4f9;
+  background: #eaf1f7;
 }
 
 * {
@@ -19,8 +19,9 @@ body {
   min-height: 100%;
   margin: 0;
   background:
-    linear-gradient(135deg, rgba(6, 35, 63, 0.06), rgba(255, 90, 0, 0.04)),
-    #eef4f9;
+    radial-gradient(circle at 94% 0%, rgba(255, 90, 0, 0.1), transparent 28rem),
+    radial-gradient(circle at 0% 0%, rgba(6, 35, 63, 0.08), transparent 24rem),
+    #eaf1f7;
   color: #071a2e;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -48,7 +49,7 @@ a {
 
 @layer components {
   .app-page-header {
-    @apply border-b border-field bg-white px-4 py-5 sm:px-6 lg:px-8 lg:py-6;
+    @apply border-b border-[#dce7f1] bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_64%,#fff3eb_100%)] px-4 py-5 shadow-[0_1px_0_rgba(255,255,255,0.85)] sm:px-6 lg:px-8 lg:py-6;
   }
 
   .app-page-body {
@@ -56,23 +57,23 @@ a {
   }
 
   .eyebrow {
-    @apply text-xs font-bold uppercase tracking-[0.12em] text-copper;
+    @apply text-xs font-black uppercase tracking-[0.12em] text-copper;
   }
 
   .page-title {
-    @apply mt-2 max-w-3xl text-2xl font-bold tracking-normal text-ink sm:text-3xl;
+    @apply mt-2 max-w-3xl text-2xl font-black tracking-normal text-ink sm:text-3xl;
   }
 
   .surface {
-    @apply rounded-lg border border-field bg-white shadow-panel;
+    @apply rounded-lg border border-[#dce7f1] bg-white shadow-[0_18px_45px_rgba(7,26,46,0.08)];
   }
 
   .surface-pad {
-    @apply rounded-lg border border-field bg-white p-4 shadow-panel sm:p-6;
+    @apply rounded-lg border border-[#dce7f1] bg-white p-4 shadow-[0_18px_45px_rgba(7,26,46,0.08)] sm:p-6;
   }
 
   .section-bar {
-    @apply border-b border-field px-4 py-4 sm:px-5;
+    @apply border-b border-[#dce7f1] bg-[linear-gradient(180deg,#ffffff,#f9fbfe)] px-4 py-4 sm:px-5;
   }
 
   .field-control {
@@ -80,15 +81,15 @@ a {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#02172b] focus:outline-none focus:ring-2 focus:ring-moss focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(6,35,63,0.18)] transition hover:bg-[#02172b] focus:outline-none focus:ring-2 focus:ring-moss focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-copper px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#e94f00] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-copper px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(255,90,0,0.22)] transition hover:bg-[#e94f00] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-field bg-white px-3 py-2.5 text-sm font-bold text-ink transition hover:border-copper hover:bg-[#fff5ef] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-[#dce7f1] bg-white px-3 py-2.5 text-sm font-bold text-ink shadow-sm transition hover:border-copper hover:bg-[#fff5ef] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
   }
 
   .status-pill {

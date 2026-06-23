@@ -163,14 +163,15 @@ export default async function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-3">
           {stats.map((stat) => (
             <article
-              className="surface-pad"
+              className="surface-pad relative overflow-hidden"
               key={stat.label}
             >
+              <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#ff5a00,#06233f)]" />
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-medium text-slate-500">
                   {stat.label}
                 </p>
-                <div className="flex size-9 items-center justify-center rounded-lg bg-field text-forest">
+                <div className="flex size-9 items-center justify-center rounded-lg bg-[#fff1e8] text-copper">
                   <stat.icon aria-hidden="true" size={18} />
                 </div>
               </div>

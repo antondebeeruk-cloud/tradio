@@ -163,8 +163,8 @@ function NavLink({
     <Link
       className={`flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition lg:justify-start ${
         isActive
-          ? "bg-white/10 text-white shadow-sm ring-1 ring-white/10"
-          : "text-white/70 hover:bg-white/10 hover:text-white"
+          ? "bg-white/12 text-white shadow-[inset_3px_0_0_#ff5a00,0_10px_24px_rgba(0,0,0,0.12)] ring-1 ring-white/10"
+          : "text-white/72 hover:bg-white/10 hover:text-white"
       }`}
       href={href}
     >
@@ -209,25 +209,25 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
   const displayName = profile?.full_name ?? email;
 
   return (
-    <main className="min-h-screen bg-[#eef4f9] text-ink">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(255,90,0,0.08),transparent_26rem),linear-gradient(135deg,#edf4fa,#f7fbff)] text-ink">
       <div className="flex min-h-screen w-full flex-col lg:flex-row">
-        <aside className="relative hidden overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(255,90,0,0.20),transparent_34%),linear-gradient(180deg,#06233f,#03182d)] px-5 py-5 text-white shadow-sm lg:sticky lg:top-0 lg:block lg:min-h-screen lg:w-72 lg:px-6 lg:py-6">
-          <div className="pointer-events-none absolute -right-14 -top-16 h-44 w-44 rotate-45 bg-copper" />
-          <div className="pointer-events-none absolute bottom-20 left-10 text-[18rem] font-black leading-none text-white/[0.025]">
+        <aside className="relative hidden overflow-hidden bg-[radial-gradient(circle_at_100%_0%,rgba(255,90,0,0.18),transparent_21rem),linear-gradient(180deg,#06233f,#021426)] px-5 py-5 text-white shadow-[16px_0_45px_rgba(7,26,46,0.12)] lg:sticky lg:top-0 lg:block lg:min-h-screen lg:w-72 lg:px-6 lg:py-6">
+          <div className="pointer-events-none absolute -bottom-24 -right-20 h-64 w-64 rotate-45 bg-copper/90" />
+          <div className="pointer-events-none absolute bottom-24 left-8 text-[18rem] font-black leading-none text-white/[0.025]">
             T
           </div>
 
-          <div className="relative px-1 py-2">
+          <div className="relative border-b border-white/10 pb-5">
             <Image
               alt="Tradio"
-              className="h-20 w-full object-contain drop-shadow-sm"
+              className="h-16 w-56 object-contain object-left drop-shadow-sm"
               height={160}
               src="/tradio-logo.png"
               width={220}
             />
           </div>
 
-          <nav className="relative mt-8 flex flex-col gap-2">
+          <nav className="relative mt-6 flex flex-col gap-2">
             {visibleNavItems.map((item) => (
               <NavLink
                 active={active}
@@ -238,14 +238,14 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
             ))}
           </nav>
 
-          <form action={logout} className="relative mt-8">
-            <button className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-white/10 lg:justify-start">
+          <form action={logout} className="relative mt-7">
+            <button className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm font-bold text-white transition hover:border-copper/60 hover:bg-white/10 lg:justify-start">
               <LogOut aria-hidden="true" size={17} />
               Log out
             </button>
           </form>
 
-          <div className="relative mt-8 rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+          <div className="relative mt-8 rounded-lg border border-white/10 bg-white/[0.07] p-4 text-sm text-white/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
             <p className="font-semibold text-white">Workspace</p>
             <p className="mt-1 leading-6">
               Customers, quotes, invoices, and business details in one place.
@@ -275,7 +275,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
           ) : null}
 
           {user ? (
-            <div className="sticky top-0 z-20 hidden justify-end border-b border-field bg-white/95 px-5 py-3 shadow-sm backdrop-blur sm:px-8 lg:flex">
+            <div className="sticky top-0 z-20 hidden justify-end border-b border-[#dce7f1] bg-white/90 px-5 py-3 shadow-[0_10px_26px_rgba(7,26,46,0.04)] backdrop-blur sm:px-8 lg:flex">
               <AccountMenu
                 email={email}
                 initials={initialsFor(displayName)}
