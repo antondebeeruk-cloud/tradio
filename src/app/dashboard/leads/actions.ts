@@ -133,11 +133,19 @@ export async function checkMailboxNow() {
       (total, count) => total + count,
       0,
     );
+    const skippedReasons = Object.entries(result.skipped)
+      .map(([reason, count]) => `${reason}: ${count}`)
+      .join(", ");
+    const failedReasons = Object.entries(result.failed)
+      .map(([reason, count]) => `${reason}: ${count}`)
+      .join(", ");
     message = `${result.processed} email${
       result.processed === 1 ? "" : "s"
     } processed. ${result.mailboxMessages} in ${result.mailbox}, ${
       result.found
-    } found, ${result.inspected} inspected, ${skippedCount} skipped, ${failedCount} failed.`;
+    } found, ${result.inspected} inspected, ${skippedCount} skipped, ${failedCount} failed.${
+      skippedReasons ? ` Skipped: ${skippedReasons}.` : ""
+    }${failedReasons ? ` Failed: ${failedReasons}.` : ""}`;
   } catch (error) {
     redirect(
       `/dashboard/leads?message=${encodeURIComponent(
