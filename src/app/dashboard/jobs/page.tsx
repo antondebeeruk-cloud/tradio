@@ -9,6 +9,7 @@ import {
   updateJobStatus,
 } from "@/app/dashboard/jobs/actions";
 import { AppShell } from "@/components/app-shell";
+import { ReceiptCapture } from "@/components/receipt-capture";
 import { currency, formatDate } from "@/lib/documents";
 import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
@@ -142,12 +143,15 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
         .order("purchase_date", { ascending: false }),
     ]);
 
+  const jobCostsTableMissing =
+    costsResult.error?.message.includes("job_costs") ||
+    costsResult.error?.message.includes("schema cache");
   const firstError =
     customersResult.error ??
     quotesResult.error ??
     invoicesResult.error ??
     jobsResult.error ??
-    costsResult.error;
+    (jobCostsTableMissing ? null : costsResult.error);
 
   if (firstError) {
     redirect(`/dashboard?message=${encodeURIComponent(firstError.message)}`);
@@ -157,8 +161,12 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
   const quotes = quotesResult.data ?? [];
   const invoices = invoicesResult.data ?? [];
   const jobs = jobsResult.data ?? [];
-  const costs = costsResult.data ?? [];
+  const costs = jobCostsTableMissing ? [] : costsResult.data ?? [];
   const costsByJob = costs.reduce<Record<string, typeof costs>>((map, cost) => {
+    if (!cost.job_id) {
+      return map;
+    }
+
     const jobCosts = map[cost.job_id] ?? [];
     jobCosts.push(cost);
     map[cost.job_id] = jobCosts;
@@ -180,6 +188,12 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
       <div className="app-page-body">
         {searchParams.message ? (
           <p className="notice mb-5">{searchParams.message}</p>
+        ) : null}
+        {jobCostsTableMissing ? (
+          <p className="notice mb-5">
+            Job cost tracking needs the latest Supabase SQL. Run
+            supabase/job-costs.sql, then refresh this page.
+          </p>
         ) : null}
 
         <section className="surface-pad">
@@ -445,6 +459,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                         className="grid gap-4 rounded-lg border border-field bg-mist p-4 xl:grid-cols-3"
                       >
                         <input name="job_id" type="hidden" value={job.id} />
+                        <ReceiptCapture />
                         <div>
                           <label className="text-sm font-medium">Document type</label>
                           <select className="field-control" name="cost_type">

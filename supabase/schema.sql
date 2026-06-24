@@ -156,7 +156,7 @@ create table if not exists public.jobs (
 create table if not exists public.job_costs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  job_id uuid not null references public.jobs (id) on delete cascade,
+  job_id uuid references public.jobs (id) on delete set null,
   cost_type text not null default 'receipt'
     check (cost_type in ('receipt', 'supplier_invoice')),
   purchase_type text not null default 'product'
@@ -535,11 +535,14 @@ create policy "Users can create their own job costs"
   on public.job_costs for insert
   with check (
     user_id = auth.uid()
-    and exists (
-      select 1
-      from public.jobs
-      where jobs.id = job_costs.job_id
-        and jobs.user_id = auth.uid()
+    and (
+      job_id is null
+      or exists (
+        select 1
+        from public.jobs
+        where jobs.id = job_costs.job_id
+          and jobs.user_id = auth.uid()
+      )
     )
     and exists (
       select 1
@@ -566,11 +569,14 @@ create policy "Users can update their own job costs"
   using (user_id = auth.uid())
   with check (
     user_id = auth.uid()
-    and exists (
-      select 1
-      from public.jobs
-      where jobs.id = job_costs.job_id
-        and jobs.user_id = auth.uid()
+    and (
+      job_id is null
+      or exists (
+        select 1
+        from public.jobs
+        where jobs.id = job_costs.job_id
+          and jobs.user_id = auth.uid()
+      )
     )
   );
 

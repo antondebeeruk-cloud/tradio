@@ -27,6 +27,12 @@ const navItems = [
   { label: "Quotes", href: "/quotes", icon: FileText },
   { label: "Invoices", href: "/invoices", icon: ReceiptText },
   {
+    label: "Receipts",
+    href: "/dashboard/receipts",
+    icon: ReceiptText,
+    eliteOnly: true,
+  },
+  {
     label: "Reports",
     href: "/dashboard/reports",
     icon: BarChart3,
@@ -55,6 +61,7 @@ type AppShellProps = {
     | "leads"
     | "quotes"
     | "invoices"
+    | "receipts"
     | "reports"
     | "jobs"
     | "support"
@@ -73,6 +80,7 @@ const activeByHref: Record<string, AppShellProps["active"]> = {
   "/dashboard": "dashboard",
   "/dashboard/leads": "leads",
   "/dashboard/jobs": "jobs",
+  "/dashboard/receipts": "receipts",
   "/dashboard/reports": "reports",
   "/dashboard/support": "support",
   "/dashboard/admin": "admin",
