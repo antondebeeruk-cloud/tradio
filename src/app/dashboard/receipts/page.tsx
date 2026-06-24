@@ -52,6 +52,14 @@ function numberValue(value: unknown) {
   return Number.isFinite(number) ? number : 0;
 }
 
+function scannedText(notes?: string | null) {
+  if (!notes?.includes("Scanned receipt text:")) {
+    return "";
+  }
+
+  return notes.split("Scanned receipt text:").at(-1)?.trim() ?? "";
+}
+
 function jobLabel(job: JobRelation | null | undefined) {
   if (!job) {
     return "Unallocated";
@@ -315,7 +323,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
 
                 return (
                   <article
-                    className="grid gap-4 px-5 py-5 xl:grid-cols-[1fr_auto]"
+                    className="grid gap-5 px-5 py-5 xl:grid-cols-[minmax(240px,0.85fr)_minmax(360px,1.35fr)_auto]"
                     key={receipt.id}
                   >
                     <div>
@@ -381,6 +389,60 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
                           manually.
                         </p>
                       ) : null}
+                    </div>
+
+                    <div className="rounded-lg border border-field bg-mist p-4 text-sm">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                            Supplier
+                          </p>
+                          <p className="mt-1 font-semibold">
+                            {receipt.supplier_name || "Not captured"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                            Reference
+                          </p>
+                          <p className="mt-1 font-semibold">
+                            {receipt.document_reference || "Not captured"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                            Subtotal
+                          </p>
+                          <p className="mt-1 font-semibold">
+                            {currency(numberValue(receipt.subtotal))}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                            VAT
+                          </p>
+                          <p className="mt-1 font-semibold">
+                            {currency(numberValue(receipt.vat_amount))} at{" "}
+                            {numberValue(receipt.vat_rate).toFixed(2)}%
+                          </p>
+                        </div>
+                      </div>
+
+                      {scannedText(receipt.notes) ? (
+                        <details className="mt-4">
+                          <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.12em] text-copper">
+                            Scanned text
+                          </summary>
+                          <p className="mt-2 max-h-32 overflow-auto whitespace-pre-line rounded-lg bg-white p-3 text-xs leading-5 text-slate-600">
+                            {scannedText(receipt.notes)}
+                          </p>
+                        </details>
+                      ) : (
+                        <p className="mt-4 text-xs leading-5 text-slate-500">
+                          Upload an image or PDF and scan it to fill this area
+                          automatically.
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-3 xl:min-w-80">
