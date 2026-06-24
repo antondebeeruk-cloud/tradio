@@ -49,7 +49,7 @@ a {
 
 @layer components {
   .app-page-header {
-    @apply border-b border-[#dce7f1] bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_64%,#fff3eb_100%)] px-4 py-5 shadow-[0_1px_0_rgba(255,255,255,0.85)] sm:px-6 lg:px-8 lg:py-6;
+    @apply flex flex-col gap-4 border-b border-[#dce7f1] bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_64%,#fff3eb_100%)] px-4 py-5 shadow-[0_1px_0_rgba(255,255,255,0.85)] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 lg:py-6;
   }
 
   .app-page-body {
@@ -81,15 +81,15 @@ a {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(6,35,63,0.18)] transition hover:bg-[#02172b] focus:outline-none focus:ring-2 focus:ring-moss focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-center text-sm font-bold !text-white shadow-[0_10px_22px_rgba(6,35,63,0.18)] transition hover:bg-[#02172b] focus:outline-none focus:ring-2 focus:ring-moss focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-copper px-4 py-2.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(255,90,0,0.22)] transition hover:bg-[#e94f00] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-copper px-4 py-2.5 text-center text-sm font-bold !text-white shadow-[0_10px_22px_rgba(255,90,0,0.22)] transition hover:bg-[#e94f00] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-[#dce7f1] bg-white px-3 py-2.5 text-sm font-bold text-ink shadow-sm transition hover:border-copper hover:bg-[#fff5ef] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#dce7f1] bg-white px-3 py-2.5 text-center text-sm font-bold text-ink shadow-sm transition hover:border-copper hover:bg-[#fff5ef] focus:outline-none focus:ring-2 focus:ring-[#ffd8c2] focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400;
   }
 
   .status-pill {
