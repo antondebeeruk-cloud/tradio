@@ -244,6 +244,20 @@ create index if not exists jobs_status_idx on public.jobs (user_id, status);
 create index if not exists job_costs_user_id_idx on public.job_costs (user_id);
 create index if not exists job_costs_job_id_idx on public.job_costs (job_id);
 create index if not exists job_costs_purchase_date_idx on public.job_costs (user_id, purchase_date desc);
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'receipt-attachments',
+  'receipt-attachments',
+  false,
+  8388608,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']
+)
+on conflict (id) do update
+set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 create index if not exists leads_user_id_idx on public.leads (user_id);
 create index if not exists leads_status_idx on public.leads (user_id, status);
 create index if not exists leads_received_at_idx on public.leads (user_id, received_at desc);
@@ -269,6 +283,27 @@ alter table public.job_costs enable row level security;
 alter table public.leads enable row level security;
 alter table public.xero_connections enable row level security;
 alter table public.xero_audit_logs enable row level security;
+
+create policy "Users can view their own receipt attachments"
+  on storage.objects for select
+  using (
+    bucket_id = 'receipt-attachments'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "Users can upload their own receipt attachments"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'receipt-attachments'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "Users can delete their own receipt attachments"
+  on storage.objects for delete
+  using (
+    bucket_id = 'receipt-attachments'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 alter table public.admin_support_access_logs enable row level security;
 
 create or replace function public.current_profile_role()

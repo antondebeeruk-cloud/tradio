@@ -14,6 +14,8 @@ type ParsedReceipt = {
   vatRate?: number;
 };
 
+type CaptureStatus = "idle" | "reading" | "attached" | "done";
+
 function parseMoney(value?: string | null) {
   if (!value) {
     return null;
@@ -84,20 +86,20 @@ function parseReceiptText(text: string): ParsedReceipt {
     )?.[1] ?? "";
   const subtotal =
     matchLastMoney(joinedText, [
-      /\bsub\s*total\b[^\d£]{0,20}(?:£|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
-      /\bnet\b[^\d£]{0,20}(?:£|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
+      /\bsub\s*total\b[^\d\u00a3]{0,20}(?:\u00a3|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
+      /\bnet\b[^\d\u00a3]{0,20}(?:\u00a3|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
     ]) ?? null;
   const vatAmount = matchLastMoney(joinedText, [
-    /\bvat\b[^\d£]{0,20}(?:£|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
+    /\bvat\b[^\d\u00a3]{0,20}(?:\u00a3|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
   ]);
   const labelledTotal = matchLastMoney(joinedText, [
-    /\bgrand\s+total\b[^\d£]{0,20}(?:£|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
-    /\bamount\s+due\b[^\d£]{0,20}(?:£|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
-    /\bbalance\s+due\b[^\d£]{0,20}(?:£|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
-    /\btotal\b[^\d£]{0,20}(?:£|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
+    /\bgrand\s+total\b[^\d\u00a3]{0,20}(?:\u00a3|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
+    /\bamount\s+due\b[^\d\u00a3]{0,20}(?:\u00a3|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
+    /\bbalance\s+due\b[^\d\u00a3]{0,20}(?:\u00a3|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
+    /\btotal\b[^\d\u00a3]{0,20}(?:\u00a3|gbp)?\s*([0-9]+(?:[.,][0-9]{2})?)/gi,
   ]);
   const moneyValues = Array.from(
-    joinedText.matchAll(/(?:£|gbp)\s*([0-9]+(?:[.,][0-9]{2})?)/gi),
+    joinedText.matchAll(/(?:\u00a3|gbp)\s*([0-9]+(?:[.,][0-9]{2})?)/gi),
   )
     .map((match) => parseMoney(match[1]))
     .filter((value): value is number => value !== null);
@@ -147,10 +149,11 @@ function setFormValue(form: HTMLFormElement, name: string, value?: string | numb
 export function ReceiptCapture() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
+  const [fileName, setFileName] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [progress, setProgress] = useState(0);
   const [rawText, setRawText] = useState("");
-  const [status, setStatus] = useState<"idle" | "reading" | "done">("idle");
+  const [status, setStatus] = useState<CaptureStatus>("idle");
   const parsedPreview = useMemo(
     () => (rawText ? parseReceiptText(rawText) : null),
     [rawText],
@@ -165,25 +168,47 @@ export function ReceiptCapture() {
     }
 
     setError("");
+    setFileName(file.name);
     setProgress(0);
     setRawText("");
+    setPreviewUrl(file.type.startsWith("image/") ? URL.createObjectURL(file) : "");
+
+    if (file.type === "application/pdf") {
+      setStatus("attached");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setError("Upload an image or PDF supplier invoice.");
+      setStatus("idle");
+      return;
+    }
+
     setStatus("reading");
-    setPreviewUrl(URL.createObjectURL(file));
 
     try {
-      const { recognize } = await import("tesseract.js");
-      const result = await recognize(file, "eng", {
-        logger: (message) => {
-          if (message.status === "recognizing text") {
-            setProgress(Math.round((message.progress ?? 0) * 100));
-          }
-        },
+      const ocrFormData = new FormData();
+      ocrFormData.append("receipt_file", file);
+      setProgress(25);
+
+      const response = await fetch("/api/receipts/ocr", {
+        body: ocrFormData,
+        method: "POST",
       });
-      const text = result.data.text.trim();
+      const payload = (await response.json()) as {
+        error?: string;
+        text?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Receipt scan failed.");
+      }
+
+      setProgress(100);
+      const text = payload.text?.trim() ?? "";
       const parsed = parseReceiptText(text);
 
       setRawText(text || "No text found.");
-      setFormValue(form, "cost_type", "receipt");
       setFormValue(form, "supplier_name", parsed.supplierName);
       setFormValue(form, "document_reference", parsed.documentReference);
       setFormValue(form, "purchase_date", parsed.purchaseDate);
@@ -203,7 +228,7 @@ export function ReceiptCapture() {
           ? scanError.message
           : "Receipt scan failed. You can still enter the details manually.",
       );
-      setStatus("idle");
+      setStatus("attached");
     }
   }
 
@@ -213,21 +238,22 @@ export function ReceiptCapture() {
         <div>
           <div className="flex items-center gap-2">
             <Camera aria-hidden="true" className="text-copper" size={18} />
-            <h3 className="text-sm font-semibold">Scan receipt photo</h3>
+            <h3 className="text-sm font-semibold">Attach receipt or invoice</h3>
           </div>
           <p className="mt-1 text-sm leading-6 text-slate-500">
-            Take a photo or upload an image. Tradio will try to fill the cost
-            details, then you can check them before saving.
+            Take a photo or upload an image/PDF. Photos are scanned for details;
+            PDFs are attached for viewing and download.
           </p>
         </div>
         <label className="btn-secondary cursor-pointer">
           <Camera aria-hidden="true" size={16} />
-          Take or upload photo
+          Take photo or upload file
           <input
             ref={inputRef}
-            accept="image/*"
+            accept="image/*,application/pdf"
             capture="environment"
             className="sr-only"
+            name="receipt_file"
             onChange={(event) => {
               const file = event.target.files?.[0];
 
@@ -256,6 +282,19 @@ export function ReceiptCapture() {
       ) : null}
 
       {error ? <p className="notice mt-4">{error}</p> : null}
+
+      {status === "attached" ? (
+        <div className="mt-4 rounded-lg bg-mist p-4 text-sm">
+          <div className="flex items-center gap-2 font-semibold text-ink">
+            <FileText aria-hidden="true" size={16} />
+            File attached
+          </div>
+          <p className="mt-2 text-slate-500">
+            {fileName || "Supplier invoice attached"}. Fill in the supplier,
+            amount, VAT, and job allocation, then save it.
+          </p>
+        </div>
+      ) : null}
 
       {status === "done" ? (
         <div className="mt-4 grid gap-4 lg:grid-cols-[160px_1fr]">

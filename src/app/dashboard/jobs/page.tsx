@@ -1,4 +1,13 @@
-import { BriefcaseBusiness, Check, Plus, ReceiptText, Save, Trash2 } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Check,
+  Download,
+  LinkIcon,
+  Plus,
+  ReceiptText,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { redirect } from "next/navigation";
 import {
   createJobCost,
@@ -11,6 +20,10 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { ReceiptCapture } from "@/components/receipt-capture";
 import { currency, formatDate } from "@/lib/documents";
+import {
+  signedReceiptDownloadUrl,
+  signedReceiptUrl,
+} from "@/lib/receipt-attachments";
 import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -161,7 +174,18 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
   const quotes = quotesResult.data ?? [];
   const invoices = invoicesResult.data ?? [];
   const jobs = jobsResult.data ?? [];
-  const costs = jobCostsTableMissing ? [] : costsResult.data ?? [];
+  const costs = jobCostsTableMissing
+    ? []
+    : await Promise.all(
+        (costsResult.data ?? []).map(async (cost) => ({
+          ...cost,
+          attachmentDownloadUrl: await signedReceiptDownloadUrl(
+            supabase,
+            cost.attachment_url,
+          ),
+          attachmentDisplayUrl: await signedReceiptUrl(supabase, cost.attachment_url),
+        })),
+      );
   const costsByJob = costs.reduce<Record<string, typeof costs>>((map, cost) => {
     if (!cost.job_id) {
       return map;
@@ -595,15 +619,26 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                                   {currency(numberValue(cost.unit_cost))} + VAT{" "}
                                   {numberValue(cost.vat_rate).toFixed(2)}%
                                 </p>
-                                {cost.attachment_url ? (
-                                  <a
-                                    className="mt-1 inline-flex text-xs font-semibold text-copper hover:underline"
-                                    href={cost.attachment_url}
-                                    rel="noreferrer"
-                                    target="_blank"
-                                  >
-                                    Open receipt
-                                  </a>
+                                {cost.attachmentDisplayUrl ? (
+                                  <div className="mt-1 flex flex-wrap gap-3">
+                                    <a
+                                      className="inline-flex items-center gap-1 text-xs font-semibold text-copper hover:underline"
+                                      href={cost.attachmentDisplayUrl}
+                                      rel="noreferrer"
+                                      target="_blank"
+                                    >
+                                      <LinkIcon aria-hidden="true" size={13} />
+                                      View file
+                                    </a>
+                                    <a
+                                      className="inline-flex items-center gap-1 text-xs font-semibold text-copper hover:underline"
+                                      download
+                                      href={cost.attachmentDownloadUrl}
+                                    >
+                                      <Download aria-hidden="true" size={13} />
+                                      Download
+                                    </a>
+                                  </div>
                                 ) : null}
                               </div>
                               <div className="flex items-center gap-3 lg:justify-end">

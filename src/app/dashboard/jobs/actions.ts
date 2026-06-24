@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import {
+  deleteReceiptAttachment,
+  uploadReceiptAttachment,
+} from "@/lib/receipt-attachments";
 import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -250,8 +254,22 @@ export async function createJobCost(formData: FormData) {
     redirect(`/dashboard/jobs?message=${encodeURIComponent("Job not found.")}`);
   }
 
+  let attachmentUrl = optionalString(formData, "attachment_url");
+
+  try {
+    attachmentUrl =
+      (await uploadReceiptAttachment({ formData, supabase, userId: user.id })) ??
+      attachmentUrl;
+  } catch (error) {
+    redirect(
+      `/dashboard/jobs?message=${encodeURIComponent(
+        error instanceof Error ? error.message : "Receipt upload failed.",
+      )}`,
+    );
+  }
+
   const { error } = await supabase.from("job_costs").insert({
-    attachment_url: optionalString(formData, "attachment_url"),
+    attachment_url: attachmentUrl,
     cost_type: costTypeValue,
     description,
     document_reference: optionalString(formData, "document_reference"),
@@ -287,6 +305,13 @@ export async function deleteJobCost(formData: FormData) {
     redirect(`/dashboard/jobs?message=${encodeURIComponent("Job cost not found")}`);
   }
 
+  const { data: jobCost } = await supabase
+    .from("job_costs")
+    .select("attachment_url")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("job_costs")
     .delete()
@@ -296,6 +321,8 @@ export async function deleteJobCost(formData: FormData) {
   if (error) {
     redirect(`/dashboard/jobs?message=${encodeURIComponent(error.message)}`);
   }
+
+  await deleteReceiptAttachment(supabase, jobCost?.attachment_url);
 
   revalidatePath("/dashboard/jobs");
   revalidatePath("/dashboard/reports");

@@ -1,4 +1,4 @@
-import { Camera, LinkIcon, ReceiptText, Trash2 } from "lucide-react";
+import { Camera, Download, LinkIcon, ReceiptText, Trash2 } from "lucide-react";
 import { redirect } from "next/navigation";
 import {
   createReceipt,
@@ -8,6 +8,10 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { ReceiptCapture } from "@/components/receipt-capture";
 import { currency, formatDate } from "@/lib/documents";
+import {
+  signedReceiptDownloadUrl,
+  signedReceiptUrl,
+} from "@/lib/receipt-attachments";
 import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -103,7 +107,21 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
   }
 
   const jobs = jobsResult.data ?? [];
-  const receipts = receiptsTableMissing ? [] : receiptsResult.data ?? [];
+  const receipts = receiptsTableMissing
+    ? []
+    : await Promise.all(
+        (receiptsResult.data ?? []).map(async (receipt) => ({
+          ...receipt,
+          attachmentDownloadUrl: await signedReceiptDownloadUrl(
+            supabase,
+            receipt.attachment_url,
+          ),
+          attachmentDisplayUrl: await signedReceiptUrl(
+            supabase,
+            receipt.attachment_url,
+          ),
+        })),
+      );
   const unallocatedTotal = receipts
     .filter((receipt) => !receipt.job_id)
     .reduce((total, receipt) => total + numberValue(receipt.total), 0);
@@ -278,7 +296,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
             <h2 className="font-semibold">Saved receipts</h2>
             <p className="mt-1 text-sm text-slate-500">
               Allocate purchases to jobs so each job shows income, expenses, and
-              profit.
+              profit. Unallocated receipts stay here until you assign them.
             </p>
           </div>
 
@@ -323,16 +341,26 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
                         {currency(numberValue(receipt.unit_cost))} + VAT{" "}
                         {numberValue(receipt.vat_rate).toFixed(2)}%
                       </p>
-                      {receipt.attachment_url ? (
-                        <a
-                          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-copper hover:underline"
-                          href={receipt.attachment_url}
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          <LinkIcon aria-hidden="true" size={13} />
-                          Open receipt
-                        </a>
+                      {receipt.attachmentDisplayUrl ? (
+                        <div className="mt-2 flex flex-wrap gap-3">
+                          <a
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-copper hover:underline"
+                            href={receipt.attachmentDisplayUrl}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            <LinkIcon aria-hidden="true" size={13} />
+                            View file
+                          </a>
+                          <a
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-copper hover:underline"
+                            download
+                            href={receipt.attachmentDownloadUrl}
+                          >
+                            <Download aria-hidden="true" size={13} />
+                            Download
+                          </a>
+                        </div>
                       ) : null}
                     </div>
 
