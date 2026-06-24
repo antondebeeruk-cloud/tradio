@@ -159,8 +159,49 @@ async function readJsonResponse(response: Response) {
       error:
         response.status === 404
           ? "Receipt scanning is not available on the server yet. Attach the file and enter the details manually."
-          : "Receipt scanning returned an unexpected server response. Attach the file and enter the details manually.",
+          : `Receipt scanning returned an unexpected server response (${response.status}). Attach the file and enter the details manually.`,
     };
+  }
+}
+
+async function imageForOcr(file: File) {
+  if (!file.type.startsWith("image/")) {
+    return file;
+  }
+
+  const imageUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Could not read receipt image."));
+      img.src = imageUrl;
+    });
+    const maxSide = 1400;
+    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return file;
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+
+    return await new Promise<Blob>((resolve) => {
+      canvas.toBlob(
+        (blob) => resolve(blob ?? file),
+        "image/jpeg",
+        0.72,
+      );
+    });
+  } finally {
+    URL.revokeObjectURL(imageUrl);
   }
 }
 
@@ -205,8 +246,9 @@ export function ReceiptCapture() {
     setStatus("reading");
 
     try {
+      const ocrImage = await imageForOcr(file);
       const ocrFormData = new FormData();
-      ocrFormData.append("receipt_file", file);
+      ocrFormData.append("receipt_file", ocrImage, "receipt-ocr.jpg");
       setProgress(25);
 
       const response = await fetch("/api/receipts/ocr", {
