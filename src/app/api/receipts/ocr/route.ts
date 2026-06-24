@@ -6,6 +6,56 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const MAX_OCR_FILE_SIZE = 8 * 1024 * 1024;
+const OCR_TIMEOUT_MS = 45_000;
+
+type OcrWorker = {
+  recognize: (image: Buffer) => Promise<{ data: { text: string } }>;
+  setParameters?: (parameters: Record<string, string>) => Promise<unknown>;
+};
+
+const globalForOcr = globalThis as typeof globalThis & {
+  tradioOcrWorker?: Promise<OcrWorker>;
+};
+
+async function getOcrWorker() {
+  if (!globalForOcr.tradioOcrWorker) {
+    globalForOcr.tradioOcrWorker = import("tesseract.js").then(
+      async ({ createWorker, PSM }) => {
+        const worker = (await createWorker("eng", 1, {
+          cachePath: "/tmp/tradio-tesseract",
+        })) as OcrWorker;
+
+        await worker.setParameters?.({
+          tessedit_pageseg_mode: PSM.SPARSE_TEXT,
+        });
+
+        return worker;
+      },
+    );
+  }
+
+  return globalForOcr.tradioOcrWorker;
+}
+
+async function withTimeout<T>(promise: Promise<T>) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeout = setTimeout(
+          () => reject(new Error("Receipt scan timed out.")),
+          OCR_TIMEOUT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
+}
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -49,14 +99,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { recognize } = await import("tesseract.js");
     const buffer = Buffer.from(await file.arrayBuffer());
-    const result = await recognize(buffer, "eng");
+    const worker = await withTimeout(getOcrWorker());
+    const result = await withTimeout(worker.recognize(buffer));
 
     return NextResponse.json({ text: result.data.text.trim() });
-  } catch {
+  } catch (error) {
     return NextResponse.json(
-      { error: "Receipt scan failed. You can still enter the details manually." },
+      {
+        error:
+          error instanceof Error && error.message.includes("timed out")
+            ? "Receipt scan timed out. Try once more; the scanner may still be warming up."
+            : "Receipt scan failed. You can still enter the details manually.",
+      },
       { status: 500 },
     );
   }

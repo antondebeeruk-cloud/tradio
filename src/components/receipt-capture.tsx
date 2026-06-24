@@ -178,7 +178,7 @@ async function imageForOcr(file: File) {
       img.onerror = () => reject(new Error("Could not read receipt image."));
       img.src = imageUrl;
     });
-    const maxSide = 1400;
+    const maxSide = 900;
     const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
     const width = Math.max(1, Math.round(image.width * scale));
     const height = Math.max(1, Math.round(image.height * scale));
@@ -197,7 +197,7 @@ async function imageForOcr(file: File) {
       canvas.toBlob(
         (blob) => resolve(blob ?? file),
         "image/jpeg",
-        0.72,
+        0.68,
       );
     });
   } finally {
