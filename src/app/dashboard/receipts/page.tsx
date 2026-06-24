@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   createReceipt,
   deleteReceipt,
+  scanReceiptFile,
   updateReceiptJob,
 } from "@/app/dashboard/receipts/actions";
 import { AppShell } from "@/components/app-shell";
@@ -60,6 +61,14 @@ function jobLabel(job: JobRelation | null | undefined) {
   const customerName = customer?.name ? ` - ${customer.name}` : "";
 
   return `${job.title ?? "Untitled job"}${customerName}`;
+}
+
+function canScanAttachment(attachmentUrl?: string | null) {
+  return Boolean(
+    attachmentUrl &&
+      !/^https?:\/\//i.test(attachmentUrl) &&
+      /\.(jpe?g|png|webp|gif)$/i.test(attachmentUrl),
+  );
 }
 
 export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) {
@@ -362,6 +371,17 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
                           </a>
                         </div>
                       ) : null}
+                      {receipt.notes?.includes("Scanned receipt text:") ? (
+                        <p className="mt-2 text-xs font-semibold text-[#177a55]">
+                          File scanned
+                        </p>
+                      ) : null}
+                      {receipt.notes?.includes("Scan failed:") ? (
+                        <p className="mt-2 text-xs font-semibold text-[#d94800]">
+                          Scan failed. You can retry or enter the details
+                          manually.
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="flex flex-col gap-3 xl:min-w-80">
@@ -387,6 +407,15 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
                           Allocate
                         </button>
                       </form>
+                      {canScanAttachment(receipt.attachment_url) ? (
+                        <form action={scanReceiptFile}>
+                          <input name="id" type="hidden" value={receipt.id} />
+                          <button className="btn-secondary w-full">
+                            <ReceiptText aria-hidden="true" size={15} />
+                            Scan file
+                          </button>
+                        </form>
+                      ) : null}
                       <form action={deleteReceipt}>
                         <input name="id" type="hidden" value={receipt.id} />
                         <button className="btn-secondary w-full">

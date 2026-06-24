@@ -6,6 +6,7 @@ import {
   deleteReceiptAttachment,
   uploadReceiptAttachment,
 } from "@/lib/receipt-attachments";
+import { queueReceiptScan } from "@/lib/receipt-ocr";
 import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -122,7 +123,9 @@ export async function createReceipt(formData: FormData) {
     );
   }
 
-  const { error } = await supabase.from("job_costs").insert({
+  const { data: receipt, error } = await supabase
+    .from("job_costs")
+    .insert({
     attachment_url: attachmentUrl,
     cost_type: costTypeValue,
     description,
@@ -140,16 +143,63 @@ export async function createReceipt(formData: FormData) {
     user_id: user.id,
     vat_amount: vatAmount,
     vat_rate: vatRate,
-  });
+  })
+    .select("id")
+    .single();
 
   if (error) {
     redirect(`/dashboard/receipts?message=${encodeURIComponent(error.message)}`);
+  }
+
+  if (receipt?.id && attachmentUrl && !/^https?:\/\//i.test(attachmentUrl)) {
+    queueReceiptScan({ receiptId: receipt.id, supabase, userId: user.id });
   }
 
   revalidatePath("/dashboard/receipts");
   revalidatePath("/dashboard/jobs");
   revalidatePath("/dashboard/reports");
   redirect(`/dashboard/receipts?message=${encodeURIComponent("Receipt saved")}`);
+}
+
+export async function scanReceiptFile(formData: FormData) {
+  const { supabase, user } = await requireEliteUser();
+  const id = getString(formData, "id");
+
+  if (!id) {
+    redirect(`/dashboard/receipts?message=${encodeURIComponent("Receipt not found.")}`);
+  }
+
+  const { data: receipt, error } = await supabase
+    .from("job_costs")
+    .select("id, attachment_url")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error || !receipt) {
+    redirect(
+      `/dashboard/receipts?message=${encodeURIComponent(
+        error?.message ?? "Receipt not found.",
+      )}`,
+    );
+  }
+
+  if (!receipt.attachment_url || /^https?:\/\//i.test(receipt.attachment_url)) {
+    redirect(
+      `/dashboard/receipts?message=${encodeURIComponent(
+        "Attach an uploaded receipt image before scanning.",
+      )}`,
+    );
+  }
+
+  queueReceiptScan({ receiptId: id, supabase, userId: user.id });
+
+  revalidatePath("/dashboard/receipts");
+  redirect(
+    `/dashboard/receipts?message=${encodeURIComponent(
+      "Receipt scan started. Refresh in a moment to see extracted details.",
+    )}`,
+  );
 }
 
 export async function updateReceiptJob(formData: FormData) {
