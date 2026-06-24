@@ -17,6 +17,7 @@ import { logout } from "@/app/auth/actions";
 import { AccountMenu } from "@/components/account-menu";
 import { TradioLogo } from "@/components/tradio-logo";
 import { hasAdminAccess } from "@/lib/admin-access";
+import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 const navItems = [
@@ -122,16 +123,16 @@ function planLabelFor(plan?: string | null, role?: string | null) {
 
 function NavLink({
   active,
-  effectivePlan,
+  canUseElite,
   item,
   mobile = false,
 }: {
   active: AppShellProps["active"];
-  effectivePlan?: string | null;
+  canUseElite: boolean;
   item: (typeof navItems)[number];
   mobile?: boolean;
 }) {
-  const isLocked = item.eliteOnly && effectivePlan === "lite";
+  const isLocked = item.eliteOnly && !canUseElite;
   const href = isLocked
     ? `/pricing?message=${encodeURIComponent(eliteUpgradeMessage)}`
     : item.href;
@@ -200,13 +201,17 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
   const { data: profile } = user
     ? await supabase
         .from("profiles")
-        .select("full_name, plan, role")
+        .select("full_name, plan, role, subscription_status, trial_expires_at")
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
   const email = user?.email ?? "";
   const isAdminUser = hasAdminAccess(profile?.role, email);
   const effectivePlan = isAdminUser ? "admin" : profile?.plan ?? plan;
+  const accessProfile = isAdminUser
+    ? { ...profile, role: "admin" }
+    : profile;
+  const canUseElite = hasEliteAccess(accessProfile);
   const visibleNavItems = navItems.filter(
     (item) => !item.adminOnly || isAdminUser,
   );
@@ -229,7 +234,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
             {visibleNavItems.map((item) => (
               <NavLink
                 active={active}
-                effectivePlan={effectivePlan}
+                canUseElite={canUseElite}
                 item={item}
                 key={item.label}
               />
@@ -284,7 +289,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
                 {visibleNavItems.map((item) => (
                   <NavLink
                     active={active}
-                    effectivePlan={effectivePlan}
+                    canUseElite={canUseElite}
                     item={item}
                     key={item.label}
                     mobile
