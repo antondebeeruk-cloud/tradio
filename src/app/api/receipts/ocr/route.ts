@@ -6,7 +6,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const MAX_OCR_FILE_SIZE = 8 * 1024 * 1024;
-const OCR_TIMEOUT_MS = 45_000;
+const OCR_TIMEOUT_MS = 22_000;
+const LOCAL_ENG_LANG_PATH =
+  process.env.TESSERACT_ENG_LANG_PATH ??
+  `${process.cwd()}/node_modules/@tesseract.js-data/eng/4.0.0`;
 
 type OcrWorker = {
   recognize: (image: Buffer) => Promise<{ data: { text: string } }>;
@@ -23,6 +26,8 @@ async function getOcrWorker() {
       async ({ createWorker, PSM }) => {
         const worker = (await createWorker("eng", 1, {
           cachePath: "/tmp/tradio-tesseract",
+          gzip: true,
+          langPath: LOCAL_ENG_LANG_PATH,
         })) as OcrWorker;
 
         await worker.setParameters?.({
