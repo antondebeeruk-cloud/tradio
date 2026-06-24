@@ -67,7 +67,7 @@ function canScanAttachment(attachmentUrl?: string | null) {
   return Boolean(
     attachmentUrl &&
       !/^https?:\/\//i.test(attachmentUrl) &&
-      /\.(jpe?g|png|webp|gif)$/i.test(attachmentUrl),
+      /\.(jpe?g|png|webp|gif|pdf)$/i.test(attachmentUrl),
   );
 }
 

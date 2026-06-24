@@ -97,7 +97,7 @@ function isScannableAttachment(attachmentUrl?: string | null) {
   return Boolean(
     attachmentUrl &&
       !/^https?:\/\//i.test(attachmentUrl) &&
-      /\.(jpe?g|png|webp|gif)$/i.test(attachmentUrl),
+      /\.(jpe?g|png|webp|gif|pdf)$/i.test(attachmentUrl),
   );
 }
 
@@ -107,13 +107,26 @@ async function recognizeWithNativeTesseract(
 ) {
   const workDir = await mkdtemp(path.join(tmpdir(), "tradio-ocr-"));
   const extension = path.extname(attachmentPath).toLowerCase() || ".png";
-  const imagePath = path.join(workDir, `receipt${extension}`);
+  const sourcePath = path.join(workDir, `receipt${extension}`);
+  const imagePath = path.join(workDir, "receipt-page.png");
 
   try {
-    await writeFile(imagePath, buffer);
+    await writeFile(sourcePath, buffer);
+
+    if (extension === ".pdf") {
+      await execFileAsync(
+        process.env.PDFTOPPM_BIN ?? "pdftoppm",
+        ["-f", "1", "-l", "1", "-singlefile", "-r", "200", "-png", sourcePath, path.join(workDir, "receipt-page")],
+        {
+          timeout: OCR_TIMEOUT_MS,
+          windowsHide: true,
+        },
+      );
+    }
+
     const { stdout } = await execFileAsync(
       process.env.TESSERACT_BIN ?? "tesseract",
-      [imagePath, "stdout", "-l", "eng", "--psm", "6"],
+      [extension === ".pdf" ? imagePath : sourcePath, "stdout", "-l", "eng", "--psm", "6"],
       {
         timeout: OCR_TIMEOUT_MS,
         windowsHide: true,
@@ -130,6 +143,12 @@ async function recognizeReceiptImage(buffer: Buffer, attachmentPath: string) {
   try {
     return await recognizeWithNativeTesseract(buffer, attachmentPath);
   } catch {
+    if (/\.pdf$/i.test(attachmentPath)) {
+      throw new Error(
+        "PDF scan failed. Make sure poppler-utils and tesseract-ocr are installed on the server.",
+      );
+    }
+
     const worker = await getOcrWorker();
     const result = await withTimeout(worker.recognize(buffer));
 
@@ -163,7 +182,7 @@ export async function processReceiptScan({
     await supabase
       .from("job_costs")
       .update({
-        notes: `${receipt.notes ? `${receipt.notes}\n\n` : ""}Scan failed: only image receipts can be scanned at the moment.`,
+        notes: `${receipt.notes ? `${receipt.notes}\n\n` : ""}Scan failed: only image or PDF receipts can be scanned at the moment.`,
         updated_at: new Date().toISOString(),
       })
       .eq("id", receiptId)
