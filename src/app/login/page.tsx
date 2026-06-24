@@ -1,7 +1,16 @@
 import Link from "next/link";
 import { LogIn } from "lucide-react";
+import type { Metadata } from "next";
 import { login } from "@/app/auth/actions";
 import { TradioLogo } from "@/components/tradio-logo";
+
+export const metadata: Metadata = {
+  title: "Log in",
+  robots: {
+    follow: false,
+    index: false,
+  },
+};
 
 type LoginPageProps = {
   searchParams: {

@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { TradioLogo } from "@/components/tradio-logo";
+
+export const metadata: Metadata = {
+  title: "Terms of Use",
+  description:
+    "Terms of Use placeholder for Tradio, a SaaS app for UK tradespeople.",
+  alternates: {
+    canonical: "/terms",
+  },
+};
 
 export default function TermsPage() {
   return (

@@ -176,6 +176,17 @@ create table if not exists public.leads (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.xero_connections (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  tenant_id text not null,
+  tenant_name text,
+  tenant_type text,
+  token_set jsonb not null,
+  scopes text,
+  connected_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.admin_support_access_logs (
   id uuid primary key default gen_random_uuid(),
   admin_user_id uuid not null references auth.users (id) on delete cascade,
@@ -198,6 +209,7 @@ create index if not exists leads_user_id_idx on public.leads (user_id);
 create index if not exists leads_status_idx on public.leads (user_id, status);
 create index if not exists leads_received_at_idx on public.leads (user_id, received_at desc);
 create index if not exists leads_original_recipient_idx on public.leads (original_recipient);
+create index if not exists xero_connections_tenant_id_idx on public.xero_connections (tenant_id);
 create index if not exists admin_support_access_logs_admin_user_id_idx
   on public.admin_support_access_logs (admin_user_id);
 create index if not exists admin_support_access_logs_target_user_id_idx
@@ -213,6 +225,7 @@ alter table public.invoices enable row level security;
 alter table public.invoice_items enable row level security;
 alter table public.jobs enable row level security;
 alter table public.leads enable row level security;
+alter table public.xero_connections enable row level security;
 alter table public.admin_support_access_logs enable row level security;
 
 create or replace function public.current_profile_role()

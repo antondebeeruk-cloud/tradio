@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { TradioLogo } from "@/components/tradio-logo";
+
+export const metadata: Metadata = {
+  title: "Cookie Policy",
+  description:
+    "Cookie Policy placeholder for Tradio, including essential cookies and optional analytics preferences.",
+  alternates: {
+    canonical: "/cookie-policy",
+  },
+};
 
 export default function CookiePolicyPage() {
   return (

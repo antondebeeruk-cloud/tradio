@@ -1,4 +1,14 @@
+import type { Metadata } from "next";
 import { TradioLogo } from "@/components/tradio-logo";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description:
+    "Privacy Policy placeholder for Tradio, a quote, invoice, lead, and job tracking app for UK tradespeople.",
+  alternates: {
+    canonical: "/privacy-policy",
+  },
+};
 
 export default function PrivacyPolicyPage() {
   return (

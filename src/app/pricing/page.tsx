@@ -1,4 +1,5 @@
 import { Check, Clock, CreditCard, ShieldCheck } from "lucide-react";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import {
   startFreeTrial,
@@ -7,6 +8,14 @@ import {
 import { TradioLogo } from "@/components/tradio-logo";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Choose Package",
+  robots: {
+    follow: false,
+    index: false,
+  },
+};
 
 type PricingPageProps = {
   searchParams: {

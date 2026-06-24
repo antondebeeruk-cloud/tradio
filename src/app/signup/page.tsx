@@ -1,7 +1,16 @@
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
+import type { Metadata } from "next";
 import { signup } from "@/app/auth/actions";
 import { TradioLogo } from "@/components/tradio-logo";
+
+export const metadata: Metadata = {
+  title: "Create Account",
+  robots: {
+    follow: false,
+    index: false,
+  },
+};
 
 type SignupPageProps = {
   searchParams: {
