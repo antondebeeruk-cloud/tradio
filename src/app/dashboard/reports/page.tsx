@@ -1,10 +1,12 @@
 import {
   BarChart3,
   BriefcaseBusiness,
+  Download,
   FileText,
   ReceiptText,
   TrendingUp,
 } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { currency } from "@/lib/documents";
@@ -260,6 +262,10 @@ export default async function ReportsPage() {
             See how quotes are turning into paid work.
           </h1>
         </div>
+        <Link className="btn-accent" href="/dashboard/reports/pdf">
+          <Download aria-hidden="true" size={17} />
+          Download PDF
+        </Link>
       </header>
 
       <div className="app-page-body">
