@@ -146,6 +146,24 @@ function setFormValue(form: HTMLFormElement, name: string, value?: string | numb
   }
 }
 
+async function readJsonResponse(response: Response) {
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text) as {
+      error?: string;
+      text?: string;
+    };
+  } catch {
+    return {
+      error:
+        response.status === 404
+          ? "Receipt scanning is not available on the server yet. Attach the file and enter the details manually."
+          : "Receipt scanning returned an unexpected server response. Attach the file and enter the details manually.",
+    };
+  }
+}
+
 export function ReceiptCapture() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
@@ -195,10 +213,7 @@ export function ReceiptCapture() {
         body: ocrFormData,
         method: "POST",
       });
-      const payload = (await response.json()) as {
-        error?: string;
-        text?: string;
-      };
+      const payload = await readJsonResponse(response);
 
       if (!response.ok) {
         throw new Error(payload.error ?? "Receipt scan failed.");
