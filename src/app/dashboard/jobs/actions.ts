@@ -11,8 +11,12 @@ const jobStatuses = [
   "completed",
   "cancelled",
 ] as const;
+const costTypes = ["receipt", "supplier_invoice"] as const;
+const purchaseTypes = ["product", "service"] as const;
 
 type JobStatus = (typeof jobStatuses)[number];
+type CostType = (typeof costTypes)[number];
+type PurchaseType = (typeof purchaseTypes)[number];
 
 const upgradeMessage =
   "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.";
@@ -29,6 +33,24 @@ function optionalString(formData: FormData, key: string) {
 
 function isJobStatus(value: string): value is JobStatus {
   return jobStatuses.includes(value as JobStatus);
+}
+
+function isCostType(value: string): value is CostType {
+  return costTypes.includes(value as CostType);
+}
+
+function isPurchaseType(value: string): value is PurchaseType {
+  return purchaseTypes.includes(value as PurchaseType);
+}
+
+function getNumber(formData: FormData, key: string, fallback = 0) {
+  const value = Number(getString(formData, key));
+
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function money(value: number) {
+  return Number(value.toFixed(2));
 }
 
 function completedAtFor(status: JobStatus, existingCompletedAt?: string | null) {
@@ -188,4 +210,94 @@ export async function deleteJob(formData: FormData) {
 
   revalidatePath("/dashboard/jobs");
   redirect(`/dashboard/jobs?message=${encodeURIComponent("Job deleted")}`);
+}
+
+export async function createJobCost(formData: FormData) {
+  const { supabase, user } = await requireEliteUser();
+  const jobId = getString(formData, "job_id");
+  const description = getString(formData, "description");
+  const costTypeValue = getString(formData, "cost_type") || "receipt";
+  const purchaseTypeValue = getString(formData, "purchase_type") || "product";
+  const quantity = Math.max(getNumber(formData, "quantity", 1), 0);
+  const unitCost = Math.max(getNumber(formData, "unit_cost"), 0);
+  const vatRate = Math.max(getNumber(formData, "vat_rate"), 0);
+  const subtotal = money(quantity * unitCost);
+  const vatAmount = money(subtotal * (vatRate / 100));
+  const total = money(subtotal + vatAmount);
+
+  if (
+    !jobId ||
+    !description ||
+    quantity <= 0 ||
+    !isCostType(costTypeValue) ||
+    !isPurchaseType(purchaseTypeValue)
+  ) {
+    redirect(
+      `/dashboard/jobs?message=${encodeURIComponent(
+        "Add a valid receipt or supplier invoice cost.",
+      )}`,
+    );
+  }
+
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("id")
+    .eq("id", jobId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!job) {
+    redirect(`/dashboard/jobs?message=${encodeURIComponent("Job not found.")}`);
+  }
+
+  const { error } = await supabase.from("job_costs").insert({
+    attachment_url: optionalString(formData, "attachment_url"),
+    cost_type: costTypeValue,
+    description,
+    document_reference: optionalString(formData, "document_reference"),
+    job_id: jobId,
+    notes: optionalString(formData, "notes"),
+    purchase_date:
+      optionalString(formData, "purchase_date") ?? new Date().toISOString().slice(0, 10),
+    purchase_type: purchaseTypeValue,
+    quantity,
+    subtotal,
+    supplier_name: optionalString(formData, "supplier_name"),
+    total,
+    unit_cost: unitCost,
+    user_id: user.id,
+    vat_amount: vatAmount,
+    vat_rate: vatRate,
+  });
+
+  if (error) {
+    redirect(`/dashboard/jobs?message=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard/jobs");
+  revalidatePath("/dashboard/reports");
+  redirect(`/dashboard/jobs?message=${encodeURIComponent("Job cost added")}`);
+}
+
+export async function deleteJobCost(formData: FormData) {
+  const { supabase, user } = await requireEliteUser();
+  const id = getString(formData, "id");
+
+  if (!id) {
+    redirect(`/dashboard/jobs?message=${encodeURIComponent("Job cost not found")}`);
+  }
+
+  const { error } = await supabase
+    .from("job_costs")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/dashboard/jobs?message=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/dashboard/jobs");
+  revalidatePath("/dashboard/reports");
+  redirect(`/dashboard/jobs?message=${encodeURIComponent("Job cost deleted")}`);
 }

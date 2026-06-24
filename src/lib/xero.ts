@@ -1,3 +1,4 @@
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const xeroAuthorizeUrl = "https://login.xero.com/identity/connect/authorize";
@@ -34,6 +35,22 @@ type XeroTenant = {
   updatedDateUtc?: string;
 };
 
+type EncryptedValue = {
+  algorithm: "aes-256-gcm";
+  authTag: string;
+  iv: string;
+  value: string;
+};
+
+type XeroAuditEvent = {
+  action: string;
+  ipAddress?: string | null;
+  message?: string;
+  status: "failure" | "success";
+  userAgent?: string | null;
+  userId?: string | null;
+};
+
 export function requireXeroConfig() {
   const clientId = process.env.XERO_CLIENT_ID;
   const clientSecret = process.env.XERO_CLIENT_SECRET;
@@ -50,6 +67,60 @@ export function requireXeroConfig() {
     clientSecret,
     redirectUri,
   };
+}
+
+function getTokenEncryptionKey() {
+  const rawKey = process.env.XERO_TOKEN_ENCRYPTION_KEY;
+
+  if (!rawKey) {
+    throw new Error("Xero token encryption key is not configured.");
+  }
+
+  const key = Buffer.from(rawKey, "base64");
+
+  if (key.length !== 32) {
+    throw new Error(
+      "Xero token encryption key must be a 32-byte base64 value.",
+    );
+  }
+
+  return key;
+}
+
+export function encryptXeroTokenSet(tokenSet: XeroTokenSet): EncryptedValue {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", getTokenEncryptionKey(), iv);
+  const value = Buffer.concat([
+    cipher.update(JSON.stringify(tokenSet), "utf8"),
+    cipher.final(),
+  ]);
+  const authTag = cipher.getAuthTag();
+
+  return {
+    algorithm: "aes-256-gcm",
+    authTag: authTag.toString("base64"),
+    iv: iv.toString("base64"),
+    value: value.toString("base64"),
+  };
+}
+
+export function decryptXeroTokenSet(encryptedValue: EncryptedValue) {
+  if (encryptedValue.algorithm !== "aes-256-gcm") {
+    throw new Error("Unsupported Xero token encryption algorithm.");
+  }
+
+  const decipher = createDecipheriv(
+    "aes-256-gcm",
+    getTokenEncryptionKey(),
+    Buffer.from(encryptedValue.iv, "base64"),
+  );
+  decipher.setAuthTag(Buffer.from(encryptedValue.authTag, "base64"));
+  const value = Buffer.concat([
+    decipher.update(Buffer.from(encryptedValue.value, "base64")),
+    decipher.final(),
+  ]);
+
+  return JSON.parse(value.toString("utf8")) as XeroTokenSet;
 }
 
 export function buildXeroConsentUrl(state: string) {
@@ -119,17 +190,37 @@ export async function saveXeroConnection({
   const admin = createAdminClient();
   const { error } = await admin.from("xero_connections").upsert({
     connected_at: new Date().toISOString(),
+    encrypted_token_set: encryptXeroTokenSet(tokenSet),
     scopes: tokenSet.scope ?? xeroScopes.join(" "),
     tenant_id: tenant.tenantId,
     tenant_name: tenant.tenantName ?? null,
     tenant_type: tenant.tenantType ?? null,
-    token_set: tokenSet,
+    token_set: null,
     updated_at: new Date().toISOString(),
     user_id: userId,
   });
 
   if (error) {
     throw new Error(error.message);
+  }
+}
+
+export async function logXeroAuditEvent(event: XeroAuditEvent) {
+  const admin = createAdminClient();
+  const { error } = await admin.from("xero_audit_logs").insert({
+    action: event.action,
+    ip_address: event.ipAddress ?? null,
+    message: event.message ?? null,
+    status: event.status,
+    user_agent: event.userAgent ?? null,
+    user_id: event.userId ?? null,
+  });
+
+  if (error) {
+    console.error("Could not write Xero audit log", {
+      action: event.action,
+      status: event.status,
+    });
   }
 }
 

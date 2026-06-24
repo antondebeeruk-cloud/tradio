@@ -1,13 +1,15 @@
-import { BriefcaseBusiness, Check, Plus, Save, Trash2 } from "lucide-react";
+import { BriefcaseBusiness, Check, Plus, ReceiptText, Save, Trash2 } from "lucide-react";
 import { redirect } from "next/navigation";
 import {
+  createJobCost,
   createJob,
+  deleteJobCost,
   deleteJob,
   updateJob,
   updateJobStatus,
 } from "@/app/dashboard/jobs/actions";
 import { AppShell } from "@/components/app-shell";
-import { formatDate } from "@/lib/documents";
+import { currency, formatDate } from "@/lib/documents";
 import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,7 +19,10 @@ type JobsPageProps = {
   };
 };
 
-type RelationWithName = { name?: string | null } | { quote_number?: string | null } | { invoice_number?: string | null };
+type RelationWithName =
+  | { name?: string | null }
+  | { quote_number?: string | null; total?: number | string | null }
+  | { invoice_number?: string | null; total?: number | string | null };
 
 const upgradeMessage =
   "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.";
@@ -34,6 +39,16 @@ const jobStatusClasses: Record<string, string> = {
   completed: "bg-[#e7f7ef] text-[#177a55]",
   in_progress: "bg-[#eaf2ff] text-[#265a93]",
   not_started: "bg-field text-forest",
+};
+
+const costTypeLabels: Record<string, string> = {
+  receipt: "Receipt",
+  supplier_invoice: "Supplier invoice",
+};
+
+const purchaseTypeLabels: Record<string, string> = {
+  product: "Product",
+  service: "Service",
 };
 
 function singleRelation<T>(relation: T | T[] | null) {
@@ -68,6 +83,12 @@ function statusLabel(status: string) {
   );
 }
 
+function numberValue(value: unknown) {
+  const number = Number(value ?? 0);
+
+  return Number.isFinite(number) ? number : 0;
+}
+
 export default async function JobsPage({ searchParams }: JobsPageProps) {
   const supabase = createClient();
   const {
@@ -88,7 +109,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
     redirect(`/pricing?message=${encodeURIComponent(upgradeMessage)}`);
   }
 
-  const [customersResult, quotesResult, invoicesResult, jobsResult] =
+  const [customersResult, quotesResult, invoicesResult, jobsResult, costsResult] =
     await Promise.all([
       supabase
         .from("customers")
@@ -97,28 +118,36 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
         .order("name", { ascending: true }),
       supabase
         .from("quotes")
-        .select("id, quote_number, customer_id")
+        .select("id, quote_number, customer_id, total")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
       supabase
         .from("invoices")
-        .select("id, invoice_number, customer_id")
+        .select("id, invoice_number, customer_id, total")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
       supabase
         .from("jobs")
         .select(
-          "id, customer_id, title, description, status, start_date, due_date, completed_at, related_quote_id, related_invoice_id, notes, created_at, customers(name), quotes(quote_number), invoices(invoice_number)",
+          "id, customer_id, title, description, status, start_date, due_date, completed_at, related_quote_id, related_invoice_id, notes, created_at, customers(name), quotes(quote_number,total), invoices(invoice_number,total)",
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("job_costs")
+        .select(
+          "id, job_id, cost_type, purchase_type, supplier_name, document_reference, purchase_date, description, quantity, unit_cost, subtotal, vat_rate, vat_amount, total, attachment_url, notes",
+        )
+        .eq("user_id", user.id)
+        .order("purchase_date", { ascending: false }),
     ]);
 
   const firstError =
     customersResult.error ??
     quotesResult.error ??
     invoicesResult.error ??
-    jobsResult.error;
+    jobsResult.error ??
+    costsResult.error;
 
   if (firstError) {
     redirect(`/dashboard?message=${encodeURIComponent(firstError.message)}`);
@@ -128,6 +157,14 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
   const quotes = quotesResult.data ?? [];
   const invoices = invoicesResult.data ?? [];
   const jobs = jobsResult.data ?? [];
+  const costs = costsResult.data ?? [];
+  const costsByJob = costs.reduce<Record<string, typeof costs>>((map, cost) => {
+    const jobCosts = map[cost.job_id] ?? [];
+    jobCosts.push(cost);
+    map[cost.job_id] = jobCosts;
+
+    return map;
+  }, {});
 
   return (
     <AppShell active="jobs" plan={profile?.plan}>
@@ -275,7 +312,25 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
 
           {jobs.length > 0 ? (
             <div className="divide-y divide-field">
-              {jobs.map((job) => (
+              {jobs.map((job) => {
+                const jobCosts = costsByJob[job.id] ?? [];
+                const costTotal = jobCosts.reduce(
+                  (total, cost) => total + numberValue(cost.total),
+                  0,
+                );
+                const linkedInvoice = singleRelation(job.invoices);
+                const linkedQuote = singleRelation(job.quotes);
+                const revenue =
+                  linkedInvoice && "total" in linkedInvoice
+                    ? numberValue(linkedInvoice.total)
+                    : linkedQuote && "total" in linkedQuote
+                      ? numberValue(linkedQuote.total)
+                      : 0;
+                const profit = revenue - costTotal;
+                const profitClass =
+                  profit >= 0 ? "text-[#177a55]" : "text-[#d94800]";
+
+                return (
                 <article className="px-5 py-5" key={job.id}>
                   <div className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-start">
                     <div>
@@ -343,6 +398,222 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                       </button>
                     </form>
                   </div>
+
+                  <div className="mt-5 grid gap-3 md:grid-cols-3">
+                    <div className="rounded-lg border border-field bg-mist p-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                        Job income
+                      </p>
+                      <p className="mt-2 text-xl font-semibold">
+                        {currency(revenue)}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Uses linked invoice first, then quote.
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-field bg-mist p-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                        Purchases
+                      </p>
+                      <p className="mt-2 text-xl font-semibold">
+                        {currency(costTotal)}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Receipts and supplier invoices.
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-field bg-mist p-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                        Profit / loss
+                      </p>
+                      <p className={`mt-2 text-xl font-semibold ${profitClass}`}>
+                        {currency(profit)}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Before overheads and tax adjustments.
+                      </p>
+                    </div>
+                  </div>
+
+                  <details className="mt-5 rounded-lg border border-field bg-white">
+                    <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
+                      Receipts and supplier invoices
+                    </summary>
+                    <div className="border-t border-field p-4">
+                      <form
+                        action={createJobCost}
+                        className="grid gap-4 rounded-lg border border-field bg-mist p-4 xl:grid-cols-3"
+                      >
+                        <input name="job_id" type="hidden" value={job.id} />
+                        <div>
+                          <label className="text-sm font-medium">Document type</label>
+                          <select className="field-control" name="cost_type">
+                            <option value="receipt">Receipt</option>
+                            <option value="supplier_invoice">Supplier invoice</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Purchase type</label>
+                          <select className="field-control" name="purchase_type">
+                            <option value="product">Product</option>
+                            <option value="service">Service</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Purchase date</label>
+                          <input
+                            className="field-control"
+                            name="purchase_date"
+                            type="date"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Supplier</label>
+                          <input
+                            className="field-control"
+                            name="supplier_name"
+                            placeholder="Supplier or merchant"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Reference</label>
+                          <input
+                            className="field-control"
+                            name="document_reference"
+                            placeholder="Receipt or invoice number"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Receipt URL</label>
+                          <input
+                            className="field-control"
+                            name="attachment_url"
+                            placeholder="https://..."
+                            type="url"
+                          />
+                        </div>
+                        <div className="xl:col-span-3">
+                          <label className="text-sm font-medium">Description</label>
+                          <input
+                            className="field-control"
+                            name="description"
+                            placeholder="Materials, hire, subcontractor, fuel..."
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Quantity</label>
+                          <input
+                            className="field-control"
+                            defaultValue="1"
+                            min="0.01"
+                            name="quantity"
+                            step="0.01"
+                            type="number"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Unit cost</label>
+                          <input
+                            className="field-control"
+                            defaultValue="0"
+                            min="0"
+                            name="unit_cost"
+                            step="0.01"
+                            type="number"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">VAT rate %</label>
+                          <input
+                            className="field-control"
+                            defaultValue="0"
+                            min="0"
+                            name="vat_rate"
+                            step="0.01"
+                            type="number"
+                          />
+                        </div>
+                        <div className="xl:col-span-3">
+                          <label className="text-sm font-medium">Notes</label>
+                          <textarea className="field-control min-h-20" name="notes" />
+                        </div>
+                        <div className="xl:col-span-3">
+                          <button className="btn-accent">
+                            <ReceiptText aria-hidden="true" size={16} />
+                            Add cost
+                          </button>
+                        </div>
+                      </form>
+
+                      <div className="mt-4 divide-y divide-field rounded-lg border border-field">
+                        {jobCosts.length > 0 ? (
+                          jobCosts.map((cost) => (
+                            <div
+                              className="grid gap-3 px-4 py-3 text-sm lg:grid-cols-[1fr_auto] lg:items-center"
+                              key={cost.id}
+                            >
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-semibold text-ink">
+                                    {cost.description}
+                                  </p>
+                                  <span className="status-pill bg-field text-forest">
+                                    {costTypeLabels[cost.cost_type] ?? cost.cost_type}
+                                  </span>
+                                  <span className="status-pill bg-[#fff5ef] text-[#d94800]">
+                                    {purchaseTypeLabels[cost.purchase_type] ??
+                                      cost.purchase_type}
+                                  </span>
+                                </div>
+                                <p className="mt-1 text-slate-500">
+                                  {cost.supplier_name || "No supplier"}
+                                  {cost.document_reference
+                                    ? ` - Ref ${cost.document_reference}`
+                                    : ""}
+                                  {cost.purchase_date
+                                    ? ` - ${formatDate(cost.purchase_date)}`
+                                    : ""}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  Qty {numberValue(cost.quantity).toFixed(2)} x{" "}
+                                  {currency(numberValue(cost.unit_cost))} + VAT{" "}
+                                  {numberValue(cost.vat_rate).toFixed(2)}%
+                                </p>
+                                {cost.attachment_url ? (
+                                  <a
+                                    className="mt-1 inline-flex text-xs font-semibold text-copper hover:underline"
+                                    href={cost.attachment_url}
+                                    rel="noreferrer"
+                                    target="_blank"
+                                  >
+                                    Open receipt
+                                  </a>
+                                ) : null}
+                              </div>
+                              <div className="flex items-center gap-3 lg:justify-end">
+                                <p className="font-semibold">
+                                  {currency(numberValue(cost.total))}
+                                </p>
+                                <form action={deleteJobCost}>
+                                  <input name="id" type="hidden" value={cost.id} />
+                                  <button className="btn-secondary" type="submit">
+                                    <Trash2 aria-hidden="true" size={15} />
+                                    Delete
+                                  </button>
+                                </form>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="px-4 py-5 text-sm text-slate-500">
+                            No receipts or supplier invoices have been added to
+                            this job yet.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </details>
 
                   <details className="mt-5 rounded-lg border border-field bg-white">
                     <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
@@ -487,7 +758,8 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                     </button>
                   </form>
                 </article>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="px-5 py-10 text-center">

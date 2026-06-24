@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   exchangeXeroCodeForToken,
   getXeroTenants,
+  logXeroAuditEvent,
   saveXeroConnection,
   xeroStateCookieName,
 } from "@/lib/xero";
@@ -14,6 +15,13 @@ function settingsRedirect(request: NextRequest, message: string) {
   return NextResponse.redirect(
     new URL(`/settings?message=${encodeURIComponent(message)}`, request.url),
   );
+}
+
+function requestMeta(request: NextRequest) {
+  return {
+    ipAddress: request.headers.get("x-forwarded-for"),
+    userAgent: request.headers.get("user-agent"),
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -37,10 +45,26 @@ export async function GET(request: NextRequest) {
   cookies().delete(xeroStateCookieName);
 
   if (error) {
+    await logXeroAuditEvent({
+      action: "xero-connect-callback",
+      message: `Xero returned error: ${error}`,
+      status: "failure",
+      userId: user.id,
+      ...requestMeta(request),
+    });
+
     return settingsRedirect(request, `Xero connection cancelled: ${error}`);
   }
 
   if (!code || !state || !savedState || state !== savedState) {
+    await logXeroAuditEvent({
+      action: "xero-connect-callback",
+      message: "OAuth state verification failed.",
+      status: "failure",
+      userId: user.id,
+      ...requestMeta(request),
+    });
+
     return settingsRedirect(request, "Xero connection could not be verified.");
   }
 
@@ -50,6 +74,14 @@ export async function GET(request: NextRequest) {
     const tenant = tenants[0];
 
     if (!tenant) {
+      await logXeroAuditEvent({
+        action: "xero-connect-callback",
+        message: "No Xero tenant was available after consent.",
+        status: "failure",
+        userId: user.id,
+        ...requestMeta(request),
+      });
+
       return settingsRedirect(
         request,
         "Xero connected, but no organisation was available.",
@@ -62,6 +94,14 @@ export async function GET(request: NextRequest) {
       userId: user.id,
     });
 
+    await logXeroAuditEvent({
+      action: "xero-connect-callback",
+      message: `Connected tenant ${tenant.tenantId}.`,
+      status: "success",
+      userId: user.id,
+      ...requestMeta(request),
+    });
+
     return settingsRedirect(
       request,
       `Xero connected to ${tenant.tenantName ?? "your organisation"}.`,
@@ -71,6 +111,14 @@ export async function GET(request: NextRequest) {
       callbackError instanceof Error
         ? callbackError.message
         : "Could not finish Xero connection.";
+
+    await logXeroAuditEvent({
+      action: "xero-connect-callback",
+      message,
+      status: "failure",
+      userId: user.id,
+      ...requestMeta(request),
+    });
 
     return settingsRedirect(request, message);
   }

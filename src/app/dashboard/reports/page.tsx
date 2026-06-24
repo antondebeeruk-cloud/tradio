@@ -28,12 +28,14 @@ export default async function ReportsPage() {
     redirect(`/pricing?message=${encodeURIComponent(upgradeMessage)}`);
   }
 
-  const [quotesResult, invoicesResult] = await Promise.all([
+  const [quotesResult, invoicesResult, jobCostsResult] = await Promise.all([
     supabase.from("quotes").select("id, status").eq("user_id", user.id),
     supabase.from("invoices").select("id, status, total").eq("user_id", user.id),
+    supabase.from("job_costs").select("id, total").eq("user_id", user.id),
   ]);
 
-  const firstError = quotesResult.error ?? invoicesResult.error;
+  const firstError =
+    quotesResult.error ?? invoicesResult.error ?? jobCostsResult.error;
 
   if (firstError) {
     redirect(`/dashboard?message=${encodeURIComponent(firstError.message)}`);
@@ -41,6 +43,7 @@ export default async function ReportsPage() {
 
   const quotes = quotesResult.data ?? [];
   const invoices = invoicesResult.data ?? [];
+  const jobCosts = jobCostsResult.data ?? [];
   const acceptedQuotes = quotes.filter((quote) => quote.status === "accepted");
   const paidInvoices = invoices.filter((invoice) => invoice.status === "paid");
   const unpaidInvoices = invoices.filter((invoice) =>
@@ -54,6 +57,11 @@ export default async function ReportsPage() {
     (total, invoice) => total + Number(invoice.total ?? 0),
     0,
   );
+  const totalJobCosts = jobCosts.reduce(
+    (total, cost) => total + Number(cost.total ?? 0),
+    0,
+  );
+  const grossProfit = paidRevenue - totalJobCosts;
   const conversionRate =
     quotes.length > 0 ? (acceptedQuotes.length / quotes.length) * 100 : 0;
 
@@ -92,6 +100,16 @@ export default async function ReportsPage() {
       icon: BarChart3,
       label: "Outstanding invoice value",
       value: currency(outstandingValue),
+    },
+    {
+      icon: ReceiptText,
+      label: "Total job costs",
+      value: currency(totalJobCosts),
+    },
+    {
+      icon: TrendingUp,
+      label: "Gross profit",
+      value: currency(grossProfit),
     },
     {
       icon: TrendingUp,
