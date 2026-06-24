@@ -183,8 +183,8 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
             <div>
               <h2 className="font-semibold">Add receipt or supplier invoice</h2>
               <p className="text-sm text-slate-500">
-                Scan a photo, check the details, then save it now or allocate it
-                to a job.
+                Upload a photo and Tradio will start reading it after saving.
+                PDFs are saved as viewable attachments.
               </p>
             </div>
           </div>
@@ -250,8 +250,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
               <input
                 className="field-control"
                 name="description"
-                placeholder="Materials, hire, subcontractor, fuel..."
-                required
+                placeholder="Optional - scanner can fill this from images"
               />
             </div>
             <div>

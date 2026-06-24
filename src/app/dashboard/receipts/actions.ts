@@ -29,6 +29,23 @@ function optionalString(formData: FormData, key: string) {
   return value.length > 0 ? value : null;
 }
 
+function hasAttachmentInput(formData: FormData) {
+  const file = formData.get("receipt_file");
+
+  return (
+    Boolean(optionalString(formData, "attachment_url")) ||
+    (file instanceof File && file.size > 0)
+  );
+}
+
+function canAutoScan(attachmentUrl?: string | null) {
+  return Boolean(
+    attachmentUrl &&
+      !/^https?:\/\//i.test(attachmentUrl) &&
+      /\.(jpe?g|png|webp|gif)$/i.test(attachmentUrl),
+  );
+}
+
 function getNumber(formData: FormData, key: string, fallback = 0) {
   const value = Number(getString(formData, key));
 
@@ -72,7 +89,9 @@ async function requireEliteUser() {
 
 export async function createReceipt(formData: FormData) {
   const { supabase, user } = await requireEliteUser();
-  const description = getString(formData, "description");
+  const description =
+    getString(formData, "description") ||
+    (hasAttachmentInput(formData) ? "Uploaded receipt" : "");
   const jobId = optionalString(formData, "job_id");
   const costTypeValue = getString(formData, "cost_type") || "receipt";
   const purchaseTypeValue = getString(formData, "purchase_type") || "product";
@@ -151,14 +170,22 @@ export async function createReceipt(formData: FormData) {
     redirect(`/dashboard/receipts?message=${encodeURIComponent(error.message)}`);
   }
 
-  if (receipt?.id && attachmentUrl && !/^https?:\/\//i.test(attachmentUrl)) {
+  const shouldAutoScan = receipt?.id && canAutoScan(attachmentUrl);
+
+  if (shouldAutoScan) {
     queueReceiptScan({ receiptId: receipt.id, supabase, userId: user.id });
   }
 
   revalidatePath("/dashboard/receipts");
   revalidatePath("/dashboard/jobs");
   revalidatePath("/dashboard/reports");
-  redirect(`/dashboard/receipts?message=${encodeURIComponent("Receipt saved")}`);
+  redirect(
+    `/dashboard/receipts?message=${encodeURIComponent(
+      shouldAutoScan
+        ? "Receipt saved. Background scan started; refresh shortly to see extracted details."
+        : "Receipt saved",
+    )}`,
+  );
 }
 
 export async function scanReceiptFile(formData: FormData) {
