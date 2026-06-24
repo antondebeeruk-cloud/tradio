@@ -6,6 +6,7 @@ import {
   deleteReceiptAttachment,
   uploadReceiptAttachment,
 } from "@/lib/receipt-attachments";
+import { queueReceiptScan } from "@/lib/receipt-ocr";
 import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,10 +18,23 @@ const jobStatuses = [
 ] as const;
 const costTypes = ["receipt", "supplier_invoice"] as const;
 const purchaseTypes = ["product", "service"] as const;
+const receiptCategories = [
+  "materials",
+  "labour",
+  "subcontractor",
+  "hire",
+  "fuel",
+  "tools",
+  "waste",
+  "parking",
+  "admin",
+  "other",
+] as const;
 
 type JobStatus = (typeof jobStatuses)[number];
 type CostType = (typeof costTypes)[number];
 type PurchaseType = (typeof purchaseTypes)[number];
+type ReceiptCategory = (typeof receiptCategories)[number];
 
 const upgradeMessage =
   "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.";
@@ -47,6 +61,10 @@ function isPurchaseType(value: string): value is PurchaseType {
   return purchaseTypes.includes(value as PurchaseType);
 }
 
+function isReceiptCategory(value: string): value is ReceiptCategory {
+  return receiptCategories.includes(value as ReceiptCategory);
+}
+
 function getNumber(formData: FormData, key: string, fallback = 0) {
   const value = Number(getString(formData, key));
 
@@ -55,6 +73,14 @@ function getNumber(formData: FormData, key: string, fallback = 0) {
 
 function money(value: number) {
   return Number(value.toFixed(2));
+}
+
+function canAutoScan(attachmentUrl?: string | null) {
+  return Boolean(
+    attachmentUrl &&
+      !/^https?:\/\//i.test(attachmentUrl) &&
+      /\.(jpe?g|png|webp|gif|pdf)$/i.test(attachmentUrl),
+  );
 }
 
 function completedAtFor(status: JobStatus, existingCompletedAt?: string | null) {
@@ -222,6 +248,7 @@ export async function createJobCost(formData: FormData) {
   const description = getString(formData, "description");
   const costTypeValue = getString(formData, "cost_type") || "receipt";
   const purchaseTypeValue = getString(formData, "purchase_type") || "product";
+  const categoryValue = getString(formData, "category") || "other";
   const quantity = Math.max(getNumber(formData, "quantity", 1), 0);
   const unitCost = Math.max(getNumber(formData, "unit_cost"), 0);
   const vatRate = Math.max(getNumber(formData, "vat_rate"), 0);
@@ -234,7 +261,8 @@ export async function createJobCost(formData: FormData) {
     !description ||
     quantity <= 0 ||
     !isCostType(costTypeValue) ||
-    !isPurchaseType(purchaseTypeValue)
+    !isPurchaseType(purchaseTypeValue) ||
+    !isReceiptCategory(categoryValue)
   ) {
     redirect(
       `/dashboard/jobs?message=${encodeURIComponent(
@@ -268,8 +296,9 @@ export async function createJobCost(formData: FormData) {
     );
   }
 
-  const { error } = await supabase.from("job_costs").insert({
+  const { data: cost, error } = await supabase.from("job_costs").insert({
     attachment_url: attachmentUrl,
+    category: categoryValue,
     cost_type: costTypeValue,
     description,
     document_reference: optionalString(formData, "document_reference"),
@@ -286,10 +315,16 @@ export async function createJobCost(formData: FormData) {
     user_id: user.id,
     vat_amount: vatAmount,
     vat_rate: vatRate,
-  });
+  })
+    .select("id")
+    .single();
 
   if (error) {
     redirect(`/dashboard/jobs?message=${encodeURIComponent(error.message)}`);
+  }
+
+  if (cost?.id && canAutoScan(attachmentUrl)) {
+    queueReceiptScan({ receiptId: cost.id, supabase, userId: user.id });
   }
 
   revalidatePath("/dashboard/jobs");

@@ -175,6 +175,21 @@ create table if not exists public.job_costs (
     check (cost_type in ('receipt', 'supplier_invoice')),
   purchase_type text not null default 'product'
     check (purchase_type in ('product', 'service')),
+  category text not null default 'other'
+    check (
+      category in (
+        'materials',
+        'labour',
+        'subcontractor',
+        'hire',
+        'fuel',
+        'tools',
+        'waste',
+        'parking',
+        'admin',
+        'other'
+      )
+    ),
   supplier_name text,
   document_reference text,
   purchase_date date not null default current_date,
@@ -258,6 +273,20 @@ create table if not exists public.customer_portal_links (
   unique (document_type, invoice_id)
 );
 
+create table if not exists public.invoice_reminders (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  invoice_id uuid not null references public.invoices (id) on delete cascade,
+  customer_email text not null,
+  reminder_type text not null default 'manual'
+    check (reminder_type in ('manual', 'automatic')),
+  status text not null default 'sent'
+    check (status in ('sent', 'failed')),
+  message text,
+  sent_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.admin_support_access_logs (
   id uuid primary key default gen_random_uuid(),
   admin_user_id uuid not null references auth.users (id) on delete cascade,
@@ -279,6 +308,7 @@ create index if not exists jobs_status_idx on public.jobs (user_id, status);
 create index if not exists job_costs_user_id_idx on public.job_costs (user_id);
 create index if not exists job_costs_job_id_idx on public.job_costs (job_id);
 create index if not exists job_costs_purchase_date_idx on public.job_costs (user_id, purchase_date desc);
+create index if not exists job_costs_category_idx on public.job_costs (user_id, category);
 create index if not exists saved_quote_items_user_id_idx on public.saved_quote_items (user_id, name);
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -305,6 +335,10 @@ create index if not exists customer_portal_links_user_id_idx
   on public.customer_portal_links (user_id);
 create index if not exists customer_portal_links_token_idx
   on public.customer_portal_links (token);
+create index if not exists invoice_reminders_user_id_idx
+  on public.invoice_reminders (user_id, sent_at desc);
+create index if not exists invoice_reminders_invoice_id_idx
+  on public.invoice_reminders (invoice_id, sent_at desc);
 create index if not exists admin_support_access_logs_admin_user_id_idx
   on public.admin_support_access_logs (admin_user_id);
 create index if not exists admin_support_access_logs_target_user_id_idx
@@ -325,6 +359,7 @@ alter table public.leads enable row level security;
 alter table public.xero_connections enable row level security;
 alter table public.xero_audit_logs enable row level security;
 alter table public.customer_portal_links enable row level security;
+alter table public.invoice_reminders enable row level security;
 
 create policy "Users can view their own receipt attachments"
   on storage.objects for select
@@ -500,6 +535,14 @@ create policy "Users can update their own customer portal links"
 create policy "Users can delete their own customer portal links"
   on public.customer_portal_links for delete
   using (user_id = auth.uid());
+
+create policy "Users can view their own invoice reminders"
+  on public.invoice_reminders for select
+  using (user_id = auth.uid());
+
+create policy "Users can create their own invoice reminders"
+  on public.invoice_reminders for insert
+  with check (user_id = auth.uid());
 
 create policy "Users can view their own jobs"
   on public.jobs for select

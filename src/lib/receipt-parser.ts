@@ -1,4 +1,5 @@
 export type ParsedReceipt = {
+  category?: string;
   description?: string;
   documentReference?: string;
   purchaseDate?: string;
@@ -8,6 +9,46 @@ export type ParsedReceipt = {
   vatAmount?: number;
   vatRate?: number;
 };
+
+const receiptCategoryRules: Array<{ category: string; pattern: RegExp }> = [
+  {
+    category: "fuel",
+    pattern: /\b(fuel|petrol|diesel|shell|bp|esso|texaco|tesco fuel)\b/i,
+  },
+  {
+    category: "parking",
+    pattern: /\b(parking|car park|ringgo|paybyphone)\b/i,
+  },
+  {
+    category: "hire",
+    pattern: /\b(hire|rental|tool hire|plant hire|hss|speedy)\b/i,
+  },
+  {
+    category: "tools",
+    pattern: /\b(tool|tools|drill|saw|screwfix|toolstation)\b/i,
+  },
+  {
+    category: "waste",
+    pattern: /\b(skip|waste|disposal|tip|recycling)\b/i,
+  },
+  {
+    category: "subcontractor",
+    pattern: /\b(subcontract|sub contractor|contractor|labour only)\b/i,
+  },
+  {
+    category: "labour",
+    pattern: /\b(labour|labor|hours|day rate|hourly rate|wages)\b/i,
+  },
+  {
+    category: "admin",
+    pattern: /\b(postage|stationery|software|subscription|insurance|accounting)\b/i,
+  },
+  {
+    category: "materials",
+    pattern:
+      /\b(materials|timber|wood|pipe|cable|paint|cement|sand|plaster|bricks|tiles|screws|fixings|parts|supplies|builder depot|wickes|b&q)\b/i,
+  },
+];
 
 function parseMoney(value?: string | null) {
   if (!value) {
@@ -98,6 +139,12 @@ function matchLabel(text: string, label: string) {
   );
 }
 
+export function categoriseReceiptText(text: string) {
+  const matchedRule = receiptCategoryRules.find((rule) => rule.pattern.test(text));
+
+  return matchedRule?.category ?? "other";
+}
+
 export function parseReceiptText(text: string): ParsedReceipt {
   const lines = text
     .split(/\r?\n/)
@@ -154,6 +201,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
     (total && vatAmount ? Number((total - vatAmount).toFixed(2)) : total ?? 0);
 
   return {
+    category: categoriseReceiptText(joinedText),
     description: supplierName ? `Receipt from ${supplierName}` : "Receipt purchase",
     documentReference,
     purchaseDate,

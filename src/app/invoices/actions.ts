@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { sendInvoiceReminder } from "@/lib/invoice-reminders";
 import { createClient } from "@/lib/supabase/server";
 
 const invoiceStatuses = ["unpaid", "paid", "overdue"] as const;
@@ -59,4 +60,31 @@ export async function updateInvoiceStatus(formData: FormData) {
   revalidatePath("/invoices");
   revalidatePath("/dashboard");
   redirect(`/invoices?message=${encodeURIComponent("Invoice status updated")}`);
+}
+
+export async function sendInvoiceReminderAction(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = getString(formData, "id");
+
+  if (!id) {
+    redirect(`/invoices?message=${encodeURIComponent("Invoice not found")}`);
+  }
+
+  try {
+    await sendInvoiceReminder({
+      invoiceId: id,
+      reminderType: "manual",
+      supabase,
+      userId: user.id,
+    });
+  } catch (error) {
+    redirect(
+      `/invoices?message=${encodeURIComponent(
+        error instanceof Error ? error.message : "Reminder could not be sent.",
+      )}`,
+    );
+  }
+
+  revalidatePath("/invoices");
+  redirect(`/invoices?message=${encodeURIComponent("Invoice reminder sent")}`);
 }

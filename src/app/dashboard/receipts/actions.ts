@@ -12,9 +12,22 @@ import { createClient } from "@/lib/supabase/server";
 
 const costTypes = ["receipt", "supplier_invoice"] as const;
 const purchaseTypes = ["product", "service"] as const;
+const receiptCategories = [
+  "materials",
+  "labour",
+  "subcontractor",
+  "hire",
+  "fuel",
+  "tools",
+  "waste",
+  "parking",
+  "admin",
+  "other",
+] as const;
 
 type CostType = (typeof costTypes)[number];
 type PurchaseType = (typeof purchaseTypes)[number];
+type ReceiptCategory = (typeof receiptCategories)[number];
 
 const upgradeMessage =
   "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.";
@@ -60,6 +73,10 @@ function isPurchaseType(value: string): value is PurchaseType {
   return purchaseTypes.includes(value as PurchaseType);
 }
 
+function isReceiptCategory(value: string): value is ReceiptCategory {
+  return receiptCategories.includes(value as ReceiptCategory);
+}
+
 function money(value: number) {
   return Number(value.toFixed(2));
 }
@@ -95,6 +112,7 @@ export async function createReceipt(formData: FormData) {
   const jobId = optionalString(formData, "job_id");
   const costTypeValue = getString(formData, "cost_type") || "receipt";
   const purchaseTypeValue = getString(formData, "purchase_type") || "product";
+  const categoryValue = getString(formData, "category") || "other";
   const quantity = Math.max(getNumber(formData, "quantity", 1), 0);
   const unitCost = Math.max(getNumber(formData, "unit_cost"), 0);
   const vatRate = Math.max(getNumber(formData, "vat_rate"), 0);
@@ -106,7 +124,8 @@ export async function createReceipt(formData: FormData) {
     !description ||
     quantity <= 0 ||
     !isCostType(costTypeValue) ||
-    !isPurchaseType(purchaseTypeValue)
+    !isPurchaseType(purchaseTypeValue) ||
+    !isReceiptCategory(categoryValue)
   ) {
     redirect(
       `/dashboard/receipts?message=${encodeURIComponent(
@@ -146,6 +165,7 @@ export async function createReceipt(formData: FormData) {
     .from("job_costs")
     .insert({
     attachment_url: attachmentUrl,
+    category: categoryValue,
     cost_type: costTypeValue,
     description,
     document_reference: optionalString(formData, "document_reference"),

@@ -19,9 +19,11 @@ type OcrWorker = {
 
 type ReceiptRecord = {
   attachment_url: string | null;
+  category: string | null;
   description: string | null;
   document_reference: string | null;
   id: string;
+  job_id: string | null;
   notes: string | null;
   purchase_date: string | null;
   quantity: number | string | null;
@@ -30,6 +32,12 @@ type ReceiptRecord = {
   unit_cost: number | string | null;
   user_id: string;
   vat_rate: number | string | null;
+};
+
+type JobMatchRecord = {
+  customers: { name?: string | null } | { name?: string | null }[] | null;
+  id: string;
+  title: string;
 };
 
 const globalForOcr = globalThis as typeof globalThis & {
@@ -91,6 +99,54 @@ function hasPositiveNumber(value: unknown) {
 
 function money(value: number) {
   return Number(value.toFixed(2));
+}
+
+function normaliseMatchText(value?: string | null) {
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function singleRelation<T>(relation: T | T[] | null) {
+  return Array.isArray(relation) ? relation[0] ?? null : relation;
+}
+
+async function findMatchingJob({
+  supabase,
+  text,
+  userId,
+}: {
+  supabase: SupabaseClient;
+  text: string;
+  userId: string;
+}) {
+  const searchableText = normaliseMatchText(text);
+
+  if (!searchableText) {
+    return null;
+  }
+
+  const { data: jobs } = await supabase
+    .from("jobs")
+    .select("id, title, customers(name)")
+    .eq("user_id", userId)
+    .neq("status", "cancelled")
+    .limit(50);
+
+  const matchedJob = (jobs as JobMatchRecord[] | null)?.find((job) => {
+    const customer = singleRelation(job.customers);
+    const jobTitle = normaliseMatchText(job.title);
+    const customerName = normaliseMatchText(customer?.name);
+
+    return (
+      (jobTitle.length >= 5 && searchableText.includes(jobTitle)) ||
+      (customerName.length >= 5 && searchableText.includes(customerName))
+    );
+  });
+
+  return matchedJob ?? null;
 }
 
 function isScannableAttachment(attachmentUrl?: string | null) {
@@ -168,7 +224,7 @@ export async function processReceiptScan({
   const { data: receipt, error: receiptError } = await supabase
     .from("job_costs")
     .select(
-      "id, user_id, attachment_url, supplier_name, document_reference, purchase_date, description, quantity, unit_cost, vat_rate, total, notes",
+      "id, user_id, job_id, attachment_url, category, supplier_name, document_reference, purchase_date, description, quantity, unit_cost, vat_rate, total, notes",
     )
     .eq("id", receiptId)
     .eq("user_id", userId)
@@ -204,6 +260,9 @@ export async function processReceiptScan({
     const buffer = Buffer.from(await fileData.arrayBuffer());
     const text = await recognizeReceiptImage(buffer, attachmentPath);
     const parsed = parseReceiptText(text);
+    const matchedJob = receipt.job_id
+      ? null
+      : await findMatchingJob({ supabase, text, userId });
     const quantity = hasPositiveNumber(receipt.quantity)
       ? Number(receipt.quantity)
       : 1;
@@ -225,12 +284,17 @@ export async function processReceiptScan({
         description: hasValue(receipt.description)
           ? receipt.description
           : parsed.description ?? "Scanned receipt",
+        category:
+          hasValue(receipt.category) && receipt.category !== "other"
+            ? receipt.category
+            : parsed.category ?? "other",
         document_reference: hasValue(receipt.document_reference)
           ? receipt.document_reference
           : parsed.documentReference || null,
-        notes: `${receipt.notes ? `${receipt.notes}\n\n` : ""}Scanned receipt text:\n${
-          text || "No text found."
-        }`,
+        job_id: receipt.job_id ?? matchedJob?.id ?? null,
+        notes: `${receipt.notes ? `${receipt.notes}\n\n` : ""}${
+          matchedJob ? `Matched to job: ${matchedJob.title}\n\n` : ""
+        }Scanned receipt text:\n${text || "No text found."}`,
         purchase_date: hasValue(receipt.purchase_date)
           ? receipt.purchase_date
           : parsed.purchaseDate || new Date().toISOString().slice(0, 10),

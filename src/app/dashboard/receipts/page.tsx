@@ -42,6 +42,19 @@ const purchaseTypeLabels: Record<string, string> = {
   service: "Service",
 };
 
+const categoryLabels: Record<string, string> = {
+  admin: "Admin",
+  fuel: "Fuel",
+  hire: "Hire",
+  labour: "Labour",
+  materials: "Materials",
+  other: "Other",
+  parking: "Parking",
+  subcontractor: "Subcontractor",
+  tools: "Tools",
+  waste: "Waste",
+};
+
 function singleRelation<T>(relation: T | T[] | null | undefined) {
   return Array.isArray(relation) ? relation[0] ?? null : relation ?? null;
 }
@@ -108,7 +121,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
     supabase
       .from("job_costs")
       .select(
-        "id, job_id, cost_type, purchase_type, supplier_name, document_reference, purchase_date, description, quantity, unit_cost, subtotal, vat_rate, vat_amount, total, attachment_url, notes, jobs(id,title,customers(name))",
+        "id, job_id, cost_type, purchase_type, category, supplier_name, document_reference, purchase_date, description, quantity, unit_cost, subtotal, vat_rate, vat_amount, total, attachment_url, notes, jobs(id,title,customers(name))",
       )
       .eq("user_id", user.id)
       .order("purchase_date", { ascending: false }),
@@ -225,6 +238,16 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
               </select>
             </div>
             <div>
+              <label className="text-sm font-medium">Category</label>
+              <select className="field-control" name="category">
+                {Object.entries(categoryLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className="text-sm font-medium">Purchase date</label>
               <input className="field-control" name="purchase_date" type="date" />
             </div>
@@ -336,6 +359,11 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
                           {purchaseTypeLabels[receipt.purchase_type] ??
                             receipt.purchase_type}
                         </span>
+                        <span className="status-pill bg-field text-forest">
+                          {categoryLabels[receipt.category] ??
+                            receipt.category ??
+                            "Other"}
+                        </span>
                       </div>
                       <p className="mt-1 text-sm text-slate-500">
                         {receipt.supplier_name || "No supplier"}
@@ -424,6 +452,16 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
                           <p className="mt-1 font-semibold">
                             {currency(numberValue(receipt.vat_amount))} at{" "}
                             {numberValue(receipt.vat_rate).toFixed(2)}%
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                            Category
+                          </p>
+                          <p className="mt-1 font-semibold">
+                            {categoryLabels[receipt.category] ??
+                              receipt.category ??
+                              "Other"}
                           </p>
                         </div>
                       </div>

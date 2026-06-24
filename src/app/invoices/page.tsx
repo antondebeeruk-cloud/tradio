@@ -2,7 +2,10 @@ import Link from "next/link";
 import { Check, ExternalLink, Mail, Printer, ReceiptText } from "lucide-react";
 import { redirect } from "next/navigation";
 import { emailInvoiceWithPdf } from "@/app/documents/actions";
-import { updateInvoiceStatus } from "@/app/invoices/actions";
+import {
+  sendInvoiceReminderAction,
+  updateInvoiceStatus,
+} from "@/app/invoices/actions";
 import { AppShell } from "@/components/app-shell";
 import { CopyButton } from "@/components/copy-button";
 import { ensureCustomerPortalLink } from "@/lib/customer-portal";
@@ -235,6 +238,21 @@ export default async function InvoicesPage({
                           </button>
                         </form>
                       </div>
+
+                      {invoice.status !== "paid" ? (
+                        <form action={sendInvoiceReminderAction}>
+                          <input name="id" type="hidden" value={invoice.id} />
+                          <button
+                            className={`btn-primary w-full ${
+                              customer?.email ? "" : "cursor-not-allowed opacity-60"
+                            }`}
+                            disabled={!customer?.email}
+                          >
+                            <Mail aria-hidden="true" size={16} />
+                            Send reminder
+                          </button>
+                        </form>
+                      ) : null}
                     </div>
                   </article>
                 );

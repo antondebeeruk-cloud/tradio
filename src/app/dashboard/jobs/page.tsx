@@ -65,6 +65,19 @@ const purchaseTypeLabels: Record<string, string> = {
   service: "Service",
 };
 
+const categoryLabels: Record<string, string> = {
+  admin: "Admin",
+  fuel: "Fuel",
+  hire: "Hire",
+  labour: "Labour",
+  materials: "Materials",
+  other: "Other",
+  parking: "Parking",
+  subcontractor: "Subcontractor",
+  tools: "Tools",
+  waste: "Waste",
+};
+
 function singleRelation<T>(relation: T | T[] | null) {
   return Array.isArray(relation) ? relation[0] ?? null : relation;
 }
@@ -150,7 +163,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
       supabase
         .from("job_costs")
         .select(
-          "id, job_id, cost_type, purchase_type, supplier_name, document_reference, purchase_date, description, quantity, unit_cost, subtotal, vat_rate, vat_amount, total, attachment_url, notes",
+          "id, job_id, cost_type, purchase_type, category, supplier_name, document_reference, purchase_date, description, quantity, unit_cost, subtotal, vat_rate, vat_amount, total, attachment_url, notes",
         )
         .eq("user_id", user.id)
         .order("purchase_date", { ascending: false }),
@@ -499,6 +512,16 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                           </select>
                         </div>
                         <div>
+                          <label className="text-sm font-medium">Category</label>
+                          <select className="field-control" name="category">
+                            {Object.entries(categoryLabels).map(([value, label]) => (
+                              <option key={value} value={value}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
                           <label className="text-sm font-medium">Purchase date</label>
                           <input
                             className="field-control"
@@ -603,6 +626,11 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                                   <span className="status-pill bg-[#fff5ef] text-[#d94800]">
                                     {purchaseTypeLabels[cost.purchase_type] ??
                                       cost.purchase_type}
+                                  </span>
+                                  <span className="status-pill bg-field text-forest">
+                                    {categoryLabels[cost.category] ??
+                                      cost.category ??
+                                      "Other"}
                                   </span>
                                 </div>
                                 <p className="mt-1 text-slate-500">
