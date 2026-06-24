@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           "/documents/",
           "/invoices",
           "/login",
+          "/portal/",
           "/pricing",
           "/quotes",
           "/settings",

@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { Check, Mail, Printer, ReceiptText } from "lucide-react";
+import { Check, ExternalLink, Mail, Printer, ReceiptText } from "lucide-react";
 import { redirect } from "next/navigation";
 import { emailInvoiceWithPdf } from "@/app/documents/actions";
 import { updateInvoiceStatus } from "@/app/invoices/actions";
 import { AppShell } from "@/components/app-shell";
+import { CopyButton } from "@/components/copy-button";
+import { ensureCustomerPortalLink } from "@/lib/customer-portal";
 import { currency } from "@/lib/documents";
 import { createClient } from "@/lib/supabase/server";
 
@@ -59,12 +61,33 @@ export default async function InvoicesPage({
   }
 
   const invoices = invoicesResult.data;
+  const invoicesWithPortalLinks = await Promise.all(
+    (invoices ?? []).map(async (invoice) => {
+      const customer = singleRelation(invoice.customers);
+      const portalLink = await ensureCustomerPortalLink({
+        customerEmail: customer?.email,
+        documentId: invoice.id,
+        documentType: "invoice",
+        userId: user.id,
+      });
+
+      return { ...invoice, portalLink };
+    }),
+  );
+  const portalError = invoicesWithPortalLinks.find(
+    (invoice) => invoice.portalLink.error,
+  )?.portalLink.error;
 
   const statusCounts = {
-    unpaid: invoices?.filter((invoice) => invoice.status === "unpaid").length ?? 0,
-    paid: invoices?.filter((invoice) => invoice.status === "paid").length ?? 0,
+    unpaid:
+      invoicesWithPortalLinks.filter((invoice) => invoice.status === "unpaid")
+        .length ?? 0,
+    paid:
+      invoicesWithPortalLinks.filter((invoice) => invoice.status === "paid")
+        .length ?? 0,
     overdue:
-      invoices?.filter((invoice) => invoice.status === "overdue").length ?? 0,
+      invoicesWithPortalLinks.filter((invoice) => invoice.status === "overdue")
+        .length ?? 0,
   };
 
   return (
@@ -84,6 +107,7 @@ export default async function InvoicesPage({
             {searchParams.message}
           </p>
         ) : null}
+        {portalError ? <p className="notice mb-5">{portalError}</p> : null}
 
         <div className="mb-6 grid gap-4 md:grid-cols-3">
           {statusOptions.map((status) => (
@@ -101,18 +125,18 @@ export default async function InvoicesPage({
           ))}
         </div>
 
-        {invoices && invoices.length > 0 ? (
+        {invoicesWithPortalLinks.length > 0 ? (
           <section className="surface overflow-hidden">
             <div className="border-b border-field px-5 py-4">
               <h2 className="text-base font-semibold">Invoice list</h2>
               <p className="mt-1 text-sm text-slate-500">
-                {invoices.length} saved invoice
-                {invoices.length === 1 ? "" : "s"}
+                {invoicesWithPortalLinks.length} saved invoice
+                {invoicesWithPortalLinks.length === 1 ? "" : "s"}
               </p>
             </div>
 
             <div className="divide-y divide-field">
-              {invoices.map((invoice) => {
+              {invoicesWithPortalLinks.map((invoice) => {
                 const customer = singleRelation(invoice.customers);
                 const sourceQuote = singleRelation(invoice.quotes);
 
@@ -173,6 +197,20 @@ export default async function InvoicesPage({
                           Save
                         </button>
                       </form>
+
+                      {invoice.portalLink.url ? (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <Link
+                            className="btn-secondary"
+                            href={invoice.portalLink.url}
+                            target="_blank"
+                          >
+                            <ExternalLink aria-hidden="true" size={16} />
+                            Portal
+                          </Link>
+                          <CopyButton text={invoice.portalLink.url} />
+                        </div>
+                      ) : null}
 
                       <div className="grid gap-2 sm:grid-cols-2">
                         <Link

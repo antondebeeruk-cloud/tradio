@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { Check, FileText, Mail, Plus, Printer, ReceiptText } from "lucide-react";
+import {
+  Check,
+  ExternalLink,
+  FileText,
+  Mail,
+  Plus,
+  Printer,
+  ReceiptText,
+} from "lucide-react";
 import { redirect } from "next/navigation";
 import { emailQuoteWithPdf } from "@/app/documents/actions";
 import {
@@ -7,6 +15,8 @@ import {
   updateQuoteStatus,
 } from "@/app/quotes/actions";
 import { AppShell } from "@/components/app-shell";
+import { CopyButton } from "@/components/copy-button";
+import { ensureCustomerPortalLink } from "@/lib/customer-portal";
 import { currency } from "@/lib/documents";
 import { createClient } from "@/lib/supabase/server";
 
@@ -62,6 +72,22 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
   }
 
   const quotes = quotesResult.data;
+  const quotesWithPortalLinks = await Promise.all(
+    (quotes ?? []).map(async (quote) => {
+      const customer = singleRelation(quote.customers);
+      const portalLink = await ensureCustomerPortalLink({
+        customerEmail: customer?.email,
+        documentId: quote.id,
+        documentType: "quote",
+        userId: user.id,
+      });
+
+      return { ...quote, portalLink };
+    }),
+  );
+  const portalError = quotesWithPortalLinks.find(
+    (quote) => quote.portalLink.error,
+  )?.portalLink.error;
 
   return (
     <AppShell active="quotes" plan={profileResult.data?.plan}>
@@ -89,18 +115,20 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
             {searchParams.message}
           </p>
         ) : null}
+        {portalError ? <p className="notice mb-5">{portalError}</p> : null}
 
-        {quotes && quotes.length > 0 ? (
+        {quotesWithPortalLinks.length > 0 ? (
           <section className="surface overflow-hidden">
             <div className="border-b border-field px-5 py-4">
               <h2 className="text-base font-semibold">Quote list</h2>
               <p className="mt-1 text-sm text-slate-500">
-                {quotes.length} saved quote{quotes.length === 1 ? "" : "s"}
+                {quotesWithPortalLinks.length} saved quote
+                {quotesWithPortalLinks.length === 1 ? "" : "s"}
               </p>
             </div>
 
             <div className="divide-y divide-field">
-              {quotes.map((quote) => {
+              {quotesWithPortalLinks.map((quote) => {
                 const customer = singleRelation(quote.customers);
 
                 return (
@@ -168,6 +196,20 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
                           Save
                         </button>
                       </form>
+
+                      {quote.portalLink.url ? (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <Link
+                            className="btn-secondary"
+                            href={quote.portalLink.url}
+                            target="_blank"
+                          >
+                            <ExternalLink aria-hidden="true" size={16} />
+                            Portal
+                          </Link>
+                          <CopyButton text={quote.portalLink.url} />
+                        </div>
+                      ) : null}
 
                       <div className="grid gap-2 sm:grid-cols-2">
                         <Link

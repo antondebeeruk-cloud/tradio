@@ -237,6 +237,27 @@ create table if not exists public.xero_audit_logs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.customer_portal_links (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  document_type text not null check (document_type in ('quote', 'invoice')),
+  quote_id uuid references public.quotes (id) on delete cascade,
+  invoice_id uuid references public.invoices (id) on delete cascade,
+  token text not null unique,
+  customer_email text,
+  last_viewed_at timestamptz,
+  accepted_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (
+    (document_type = 'quote' and quote_id is not null and invoice_id is null)
+    or
+    (document_type = 'invoice' and invoice_id is not null and quote_id is null)
+  ),
+  unique (document_type, quote_id),
+  unique (document_type, invoice_id)
+);
+
 create table if not exists public.admin_support_access_logs (
   id uuid primary key default gen_random_uuid(),
   admin_user_id uuid not null references auth.users (id) on delete cascade,
@@ -280,6 +301,10 @@ create index if not exists leads_original_recipient_idx on public.leads (origina
 create index if not exists xero_connections_tenant_id_idx on public.xero_connections (tenant_id);
 create index if not exists xero_audit_logs_user_id_idx on public.xero_audit_logs (user_id);
 create index if not exists xero_audit_logs_created_at_idx on public.xero_audit_logs (created_at desc);
+create index if not exists customer_portal_links_user_id_idx
+  on public.customer_portal_links (user_id);
+create index if not exists customer_portal_links_token_idx
+  on public.customer_portal_links (token);
 create index if not exists admin_support_access_logs_admin_user_id_idx
   on public.admin_support_access_logs (admin_user_id);
 create index if not exists admin_support_access_logs_target_user_id_idx
@@ -299,6 +324,7 @@ alter table public.saved_quote_items enable row level security;
 alter table public.leads enable row level security;
 alter table public.xero_connections enable row level security;
 alter table public.xero_audit_logs enable row level security;
+alter table public.customer_portal_links enable row level security;
 
 create policy "Users can view their own receipt attachments"
   on storage.objects for select
@@ -456,6 +482,23 @@ create policy "Users can update their own invoice items"
 
 create policy "Users can delete their own invoice items"
   on public.invoice_items for delete
+  using (user_id = auth.uid());
+
+create policy "Users can view their own customer portal links"
+  on public.customer_portal_links for select
+  using (user_id = auth.uid());
+
+create policy "Users can create their own customer portal links"
+  on public.customer_portal_links for insert
+  with check (user_id = auth.uid());
+
+create policy "Users can update their own customer portal links"
+  on public.customer_portal_links for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+create policy "Users can delete their own customer portal links"
+  on public.customer_portal_links for delete
   using (user_id = auth.uid());
 
 create policy "Users can view their own jobs"
