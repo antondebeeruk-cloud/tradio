@@ -14,7 +14,25 @@ function optionalString(formData: FormData, key: string) {
   return value.length > 0 ? value : null;
 }
 
-export async function updateProfile(formData: FormData) {
+function toPositiveNumber(value: FormDataEntryValue | null, fallback: number) {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
+function toNonNegativeNumber(value: FormDataEntryValue | null, fallback: number) {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : fallback;
+}
+
+async function requireUser() {
   const supabase = createClient();
   const {
     data: { user },
@@ -23,6 +41,12 @@ export async function updateProfile(formData: FormData) {
   if (!user) {
     redirect("/login");
   }
+
+  return { supabase, user };
+}
+
+export async function updateProfile(formData: FormData) {
+  const { supabase, user } = await requireUser();
 
   const { error } = await supabase.from("profiles").upsert({
     id: user.id,
@@ -45,4 +69,65 @@ export async function updateProfile(formData: FormData) {
 
   revalidatePath("/settings");
   redirect(`/settings?message=${encodeURIComponent("Settings saved")}`);
+}
+
+export async function createSavedQuoteItem(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const name = getString(formData, "name");
+  const description = getString(formData, "description");
+  const itemType = getString(formData, "item_type") || "service";
+  const defaultQuantity = toPositiveNumber(formData.get("default_quantity"), 1);
+  const unitPrice = toNonNegativeNumber(formData.get("unit_price"), 0);
+
+  if (!name || !description) {
+    redirect(
+      `/settings?message=${encodeURIComponent(
+        "Add a name and description for the saved item.",
+      )}`,
+    );
+  }
+
+  if (!["service", "product", "fee"].includes(itemType)) {
+    redirect(`/settings?message=${encodeURIComponent("Choose a valid item type.")}`);
+  }
+
+  const { error } = await supabase.from("saved_quote_items").insert({
+    user_id: user.id,
+    name,
+    description,
+    item_type: itemType,
+    default_quantity: defaultQuantity,
+    unit_price: unitPrice,
+  });
+
+  if (error) {
+    redirect(`/settings?message=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/quotes/new");
+  redirect(`/settings?message=${encodeURIComponent("Saved quote item added")}`);
+}
+
+export async function deleteSavedQuoteItem(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = getString(formData, "id");
+
+  if (!id) {
+    redirect(`/settings?message=${encodeURIComponent("Saved item not found")}`);
+  }
+
+  const { error } = await supabase
+    .from("saved_quote_items")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    redirect(`/settings?message=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/quotes/new");
+  redirect(`/settings?message=${encodeURIComponent("Saved quote item deleted")}`);
 }

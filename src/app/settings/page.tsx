@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ExternalLink, Link2, Unplug } from "lucide-react";
-import { updateProfile } from "@/app/settings/actions";
+import { ExternalLink, Link2, Plus, Trash2, Unplug } from "lucide-react";
+import {
+  createSavedQuoteItem,
+  deleteSavedQuoteItem,
+  updateProfile,
+} from "@/app/settings/actions";
 import { AppShell } from "@/components/app-shell";
+import { currency } from "@/lib/documents";
 import { createClient } from "@/lib/supabase/server";
 import { getXeroConnectionStatus } from "@/lib/xero";
 
@@ -21,7 +26,7 @@ function settingsMessage(message?: string) {
   }
 
   if (message.includes("does not exist")) {
-    return "Settings needs the latest Supabase profile update. Run the logo, address, and VAT SQL, then refresh this page.";
+    return "Settings needs the latest Supabase SQL update. Run the new SQL file, then refresh this page.";
   }
 
   return message;
@@ -37,13 +42,27 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     redirect("/login");
   }
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select(
-      "full_name, business_name, trade, phone, logo_url, business_address_line_1, business_address_line_2, business_town, business_postcode, vat_number, plan",
-    )
-    .eq("id", user.id)
-    .maybeSingle();
+  const [profileResult, savedItemsResult] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select(
+        "full_name, business_name, trade, phone, logo_url, business_address_line_1, business_address_line_2, business_town, business_postcode, vat_number, plan",
+      )
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("saved_quote_items")
+      .select("id, name, description, item_type, default_quantity, unit_price")
+      .eq("user_id", user.id)
+      .order("name", { ascending: true }),
+  ]);
+  const profile = profileResult.data;
+  const savedItemsTableMissing =
+    savedItemsResult.error?.message.includes("saved_quote_items") ||
+    savedItemsResult.error?.message.includes("schema cache");
+  const savedItems = savedItemsTableMissing ? [] : savedItemsResult.data ?? [];
+  const error =
+    profileResult.error ?? (savedItemsTableMissing ? null : savedItemsResult.error);
   const xeroConnection = await getXeroConnectionStatus(user.id).catch(
     (xeroError) => ({
       error:
@@ -71,6 +90,139 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       </header>
 
       <div className="app-page-body">
+        <section className="surface-pad mb-6">
+          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="eyebrow">Smart quote builder</p>
+              <h2 className="text-base font-semibold">Saved services and products</h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+                Save the jobs, fees, products, and services you quote often,
+                then add them to new quotes in one click.
+              </p>
+            </div>
+          </div>
+
+          {savedItemsTableMissing ? (
+            <p className="notice mb-5">
+              Smart quote builder needs the latest Supabase SQL. Run
+              supabase/saved-quote-items.sql, then refresh this page.
+            </p>
+          ) : null}
+
+          <form
+            action={createSavedQuoteItem}
+            className="grid gap-4 rounded-lg border border-field bg-mist p-4 lg:grid-cols-[1fr_1.4fr_150px_140px_140px_auto]"
+          >
+            <div>
+              <label className="text-sm font-medium" htmlFor="saved-name">
+                Name
+              </label>
+              <input
+                className={fieldClass}
+                id="saved-name"
+                name="name"
+                placeholder="Boiler service"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium" htmlFor="saved-description">
+                Quote description
+              </label>
+              <input
+                className={fieldClass}
+                id="saved-description"
+                name="description"
+                placeholder="Annual boiler service and safety checks"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium" htmlFor="saved-type">
+                Type
+              </label>
+              <select className={fieldClass} id="saved-type" name="item_type">
+                <option value="service">Service</option>
+                <option value="product">Product</option>
+                <option value="fee">Fee</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium" htmlFor="saved-quantity">
+                Quantity
+              </label>
+              <input
+                className={fieldClass}
+                defaultValue="1"
+                id="saved-quantity"
+                min="0.01"
+                name="default_quantity"
+                step="0.01"
+                type="number"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium" htmlFor="saved-price">
+                Unit price
+              </label>
+              <input
+                className={fieldClass}
+                defaultValue="0"
+                id="saved-price"
+                min="0"
+                name="unit_price"
+                step="0.01"
+                type="number"
+              />
+            </div>
+            <div className="flex items-end">
+              <button className="btn-accent w-full">
+                <Plus aria-hidden="true" size={16} />
+                Save
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-5 divide-y divide-field rounded-lg border border-field">
+            {savedItems.length > 0 ? (
+              savedItems.map((item) => (
+                <article
+                  className="grid gap-4 px-4 py-4 md:grid-cols-[1fr_auto] md:items-center"
+                  key={item.id}
+                >
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold">{item.name}</h3>
+                      <span className="status-pill bg-[#fff1e8] text-copper">
+                        {item.item_type}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {item.description}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Qty {Number(item.default_quantity ?? 1).toFixed(2)} x{" "}
+                      {currency(Number(item.unit_price ?? 0))}
+                    </p>
+                  </div>
+                  <form action={deleteSavedQuoteItem}>
+                    <input name="id" type="hidden" value={item.id} />
+                    <button className="btn-secondary text-slate-600 hover:text-ink">
+                      <Trash2 aria-hidden="true" size={16} />
+                      Delete
+                    </button>
+                  </form>
+                </article>
+              ))
+            ) : (
+              <p className="px-4 py-5 text-sm text-slate-500">
+                No saved items yet. Add your regular services, products, or
+                call-out fees above.
+              </p>
+            )}
+          </div>
+        </section>
+
         <section className="surface-pad mb-6">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div>

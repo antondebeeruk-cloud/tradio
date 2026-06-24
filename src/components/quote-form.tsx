@@ -16,10 +16,20 @@ type QuoteItem = {
   unitPrice: string;
 };
 
+type SavedQuoteItem = {
+  default_quantity: number | string;
+  description: string;
+  id: string;
+  item_type: string;
+  name: string;
+  unit_price: number | string;
+};
+
 type QuoteFormProps = {
   action: (formData: FormData) => Promise<void>;
   customers: CustomerOption[];
   message?: string;
+  savedItems?: SavedQuoteItem[];
   selectedCustomerId?: string;
 };
 
@@ -51,6 +61,7 @@ export function QuoteForm({
   action,
   customers,
   message,
+  savedItems = [],
   selectedCustomerId,
 }: QuoteFormProps) {
   const [items, setItems] = useState<QuoteItem[]>([createBlankItem("item-1")]);
@@ -86,6 +97,20 @@ export function QuoteForm({
         ? currentItems
         : currentItems.filter((item) => item.id !== id),
     );
+  }
+
+  function applySavedItem(itemId: string, quoteItemId: string) {
+    const savedItem = savedItems.find((item) => item.id === itemId);
+
+    if (!savedItem) {
+      return;
+    }
+
+    updateItem(quoteItemId, {
+      description: savedItem.description,
+      quantity: String(savedItem.default_quantity ?? 1),
+      unitPrice: String(savedItem.unit_price ?? 0),
+    });
   }
 
   return (
@@ -176,9 +201,34 @@ export function QuoteForm({
 
             return (
               <div
-                className="grid gap-4 px-5 py-4 lg:grid-cols-[1fr_120px_140px_120px_auto] lg:items-end"
+                className="grid gap-4 px-5 py-4 lg:grid-cols-[180px_1fr_120px_140px_120px_auto] lg:items-end"
                 key={item.id}
               >
+                <div>
+                  <label
+                    className="text-sm font-medium"
+                    htmlFor={`saved-item-${item.id}`}
+                  >
+                    Saved item
+                  </label>
+                  <select
+                    className={fieldClass}
+                    disabled={savedItems.length === 0}
+                    id={`saved-item-${item.id}`}
+                    onChange={(event) => applySavedItem(event.target.value, item.id)}
+                    value=""
+                  >
+                    <option value="">
+                      {savedItems.length > 0 ? "Choose item" : "No saved items"}
+                    </option>
+                    {savedItems.map((savedItem) => (
+                      <option key={savedItem.id} value={savedItem.id}>
+                        {savedItem.name} - {currency(Number(savedItem.unit_price ?? 0))}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label
                     className="text-sm font-medium"

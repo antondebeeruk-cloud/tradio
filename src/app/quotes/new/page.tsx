@@ -23,17 +23,29 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
     redirect("/login");
   }
 
-  const [profileResult, customersResult] = await Promise.all([
+  const [profileResult, customersResult, savedItemsResult] = await Promise.all([
     supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle(),
     supabase
       .from("customers")
       .select("id, name")
       .eq("user_id", user.id)
       .order("name", { ascending: true }),
+    supabase
+      .from("saved_quote_items")
+      .select("id, name, description, item_type, default_quantity, unit_price")
+      .eq("user_id", user.id)
+      .order("name", { ascending: true }),
   ]);
 
   const customers = customersResult.data;
-  const error = profileResult.error ?? customersResult.error;
+  const savedItemsTableMissing =
+    savedItemsResult.error?.message.includes("saved_quote_items") ||
+    savedItemsResult.error?.message.includes("schema cache");
+  const savedItems = savedItemsTableMissing ? [] : savedItemsResult.data ?? [];
+  const error =
+    profileResult.error ??
+    customersResult.error ??
+    (savedItemsTableMissing ? null : savedItemsResult.error);
 
   if (error) {
     redirect(`/quotes?message=${encodeURIComponent(error.message)}`);
@@ -55,7 +67,12 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
           <QuoteForm
             action={createQuote}
             customers={customers}
-            message={searchParams.message}
+            message={
+              savedItemsTableMissing
+                ? "Smart quote builder needs the latest Supabase SQL. Run supabase/saved-quote-items.sql to enable saved items."
+                : searchParams.message
+            }
+            savedItems={savedItems}
             selectedCustomerId={searchParams.customerId}
           />
         ) : (
