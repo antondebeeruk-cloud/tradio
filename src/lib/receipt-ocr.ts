@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { execFile } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
 import { parseReceiptText } from "@/lib/receipt-parser";
 
 const RECEIPT_BUCKET = "receipt-attachments";
@@ -30,6 +35,7 @@ type ReceiptRecord = {
 const globalForOcr = globalThis as typeof globalThis & {
   tradioOcrWorker?: Promise<OcrWorker>;
 };
+const execFileAsync = promisify(execFile);
 
 async function getOcrWorker() {
   if (!globalForOcr.tradioOcrWorker) {
@@ -95,6 +101,42 @@ function isScannableAttachment(attachmentUrl?: string | null) {
   );
 }
 
+async function recognizeWithNativeTesseract(
+  buffer: Buffer,
+  attachmentPath: string,
+) {
+  const workDir = await mkdtemp(path.join(tmpdir(), "tradio-ocr-"));
+  const extension = path.extname(attachmentPath).toLowerCase() || ".png";
+  const imagePath = path.join(workDir, `receipt${extension}`);
+
+  try {
+    await writeFile(imagePath, buffer);
+    const { stdout } = await execFileAsync(
+      process.env.TESSERACT_BIN ?? "tesseract",
+      [imagePath, "stdout", "-l", "eng", "--psm", "6"],
+      {
+        timeout: OCR_TIMEOUT_MS,
+        windowsHide: true,
+      },
+    );
+
+    return stdout.trim();
+  } finally {
+    await rm(workDir, { force: true, recursive: true });
+  }
+}
+
+async function recognizeReceiptImage(buffer: Buffer, attachmentPath: string) {
+  try {
+    return await recognizeWithNativeTesseract(buffer, attachmentPath);
+  } catch {
+    const worker = await getOcrWorker();
+    const result = await withTimeout(worker.recognize(buffer));
+
+    return result.data.text.trim();
+  }
+}
+
 export async function processReceiptScan({
   receiptId,
   supabase,
@@ -140,11 +182,8 @@ export async function processReceiptScan({
       throw new Error(fileError?.message ?? "Receipt file could not be opened.");
     }
 
-    const worker = await getOcrWorker();
-    const result = await withTimeout(
-      worker.recognize(Buffer.from(await fileData.arrayBuffer())),
-    );
-    const text = result.data.text.trim();
+    const buffer = Buffer.from(await fileData.arrayBuffer());
+    const text = await recognizeReceiptImage(buffer, attachmentPath);
     const parsed = parseReceiptText(text);
     const quantity = hasPositiveNumber(receipt.quantity)
       ? Number(receipt.quantity)
