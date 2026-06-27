@@ -21,7 +21,6 @@ import { CopyButton } from "@/components/copy-button";
 import { formatDate } from "@/lib/documents";
 import { generateLeadEmail } from "@/lib/lead-email";
 import { htmlToText } from "@/lib/leads/parser";
-import { isAdmin } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 type LeadsPageProps = {
@@ -53,7 +52,7 @@ async function ensureLeadEmailForUser() {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("business_name, full_name, lead_email_address, plan, role")
+    .select("business_name, full_name, lead_email_address, plan")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -78,7 +77,7 @@ async function ensureLeadEmailForUser() {
       ...leadEmail,
       updated_at: new Date().toISOString(),
     })
-    .select("business_name, full_name, lead_email_address, plan, role")
+    .select("business_name, full_name, lead_email_address, plan")
     .single();
 
   if (updateError) {
@@ -101,9 +100,6 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   if (error) {
     redirect(`/dashboard?message=${encodeURIComponent(error.message)}`);
   }
-
-  const canCheckMailbox =
-    isAdmin(profile) || process.env.NODE_ENV !== "production";
 
   return (
     <AppShell active="leads" plan={profile?.plan}>
@@ -147,14 +143,12 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
                   Create mock lead
                 </button>
               </form>
-              {canCheckMailbox ? (
-                <form action={checkMailboxNow}>
-                  <button className="btn-accent w-full">
-                    <RefreshCw aria-hidden="true" size={16} />
-                    Check mailbox now
-                  </button>
-                </form>
-              ) : null}
+              <form action={checkMailboxNow}>
+                <button className="btn-accent w-full">
+                  <RefreshCw aria-hidden="true" size={16} />
+                  Check mailbox now
+                </button>
+              </form>
             </div>
           </div>
         </section>

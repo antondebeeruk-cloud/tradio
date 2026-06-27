@@ -49,11 +49,6 @@ const supportTopics: SupportTopic[] = [
     answer:
       "Use Sign up to create an account, then choose a package before entering the dashboard. If you already have an account, use Log in. Do not share passwords or API keys in support messages.",
   },
-  {
-    terms: ["admin", "support access", "client app", "client account"],
-    answer:
-      "Admin users can access the admin support area for read-only support views and reporting. This should only be used for support purposes and checked server-side.",
-  },
 ];
 
 const fallbackAnswer =

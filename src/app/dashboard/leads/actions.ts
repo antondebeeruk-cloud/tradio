@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { createMockLeadForUser } from "@/lib/leads/ingest";
 import { checkLeadsMailbox } from "@/lib/leads/imap";
 import { generateLeadEmail } from "@/lib/lead-email";
-import { isAdmin } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 const leadStatuses = ["new", "contacted", "quoted", "won", "lost", "spam"];
@@ -132,16 +131,7 @@ export async function createMockLead() {
 }
 
 export async function checkMailboxNow() {
-  const { supabase, user } = await requireUser();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!isAdmin(profile) && process.env.NODE_ENV === "production") {
-    redirect(`/dashboard/leads?message=${encodeURIComponent("Admin access required.")}`);
-  }
+  await requireUser();
 
   let message = "";
 

@@ -22,20 +22,12 @@ export async function cancelSubscription() {
   const { supabase, user } = await requireUser();
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("paypal_subscription_id, role")
+    .select("paypal_subscription_id")
     .eq("id", user.id)
     .maybeSingle();
 
   if (error) {
     redirect(`/dashboard/account?message=${encodeURIComponent(error.message)}`);
-  }
-
-  if (profile?.role === "admin") {
-    redirect(
-      `/dashboard/account?message=${encodeURIComponent(
-        "Admin accounts do not need a paid subscription.",
-      )}`,
-    );
   }
 
   if (!profile?.paypal_subscription_id) {

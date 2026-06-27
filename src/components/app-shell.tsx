@@ -8,14 +8,12 @@ import {
   MessageCircleQuestion,
   ReceiptText,
   Settings,
-  ShieldCheck,
   UsersRound,
 } from "lucide-react";
 import Link from "next/link";
 import { logout } from "@/app/auth/actions";
 import { AccountMenu } from "@/components/account-menu";
 import { TradioLogo } from "@/components/tradio-logo";
-import { hasAdminAccess } from "@/lib/admin-access";
 import { createClient } from "@/lib/supabase/server";
 
 const navItems = [
@@ -29,12 +27,6 @@ const navItems = [
   { label: "Jobs", href: "/dashboard/jobs", icon: BriefcaseBusiness },
   { label: "Support", href: "/dashboard/support", icon: MessageCircleQuestion },
   { label: "Settings", href: "/settings", icon: Settings },
-  {
-    label: "Admin",
-    href: "/dashboard/admin",
-    icon: ShieldCheck,
-    adminOnly: true,
-  },
 ];
 
 type AppShellProps = {
@@ -49,7 +41,6 @@ type AppShellProps = {
     | "jobs"
     | "support"
     | "settings"
-    | "admin"
     | "account";
   children: React.ReactNode;
   plan?: string | null;
@@ -63,7 +54,6 @@ const activeByHref: Record<string, AppShellProps["active"]> = {
   "/dashboard/receipts": "receipts",
   "/dashboard/reports": "reports",
   "/dashboard/support": "support",
-  "/dashboard/admin": "admin",
   "/invoices": "invoices",
   "/quotes": "quotes",
   "/settings": "settings",
@@ -89,11 +79,7 @@ function initialsFor(nameOrEmail: string) {
     .toUpperCase();
 }
 
-function planLabelFor(plan?: string | null, role?: string | null) {
-  if (role === "admin") {
-    return "Admin";
-  }
-
+function planLabelFor(plan?: string | null) {
   if (plan === "trial") {
     return "Trial";
   }
@@ -168,15 +154,11 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
   const { data: profile } = user
     ? await supabase
         .from("profiles")
-        .select("full_name, plan, role, subscription_status, trial_expires_at")
+        .select("full_name, plan")
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
   const email = user?.email ?? "";
-  const isAdminUser = hasAdminAccess(profile?.role, email);
-  const visibleNavItems = navItems.filter(
-    (item) => !item.adminOnly || isAdminUser,
-  );
   const displayName = profile?.full_name ?? email;
 
   return (
@@ -193,7 +175,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
           </div>
 
           <nav className="relative mt-6 flex flex-col gap-2">
-            {visibleNavItems.map((item) => (
+            {navItems.map((item) => (
               <NavLink
                 active={active}
                 item={item}
@@ -227,7 +209,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
                 email={email}
                 initials={initialsFor(displayName)}
                 name={profile?.full_name}
-                planLabel={planLabelFor(profile?.plan ?? plan, profile?.role)}
+                planLabel={planLabelFor(profile?.plan ?? plan)}
               />
             </div>
           ) : null}
@@ -238,7 +220,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
                 email={email}
                 initials={initialsFor(displayName)}
                 name={profile?.full_name}
-                planLabel={planLabelFor(profile?.plan ?? plan, profile?.role)}
+                planLabel={planLabelFor(profile?.plan ?? plan)}
               />
             </div>
           ) : null}
@@ -247,7 +229,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
           {user ? (
             <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[linear-gradient(135deg,#06233f,#03182d)] px-2 py-2 shadow-[0_-18px_40px_rgba(7,26,46,0.18)] lg:hidden">
               <div className="flex gap-1 overflow-x-auto">
-                {visibleNavItems.map((item) => (
+                {navItems.map((item) => (
                   <NavLink
                     active={active}
                     item={item}

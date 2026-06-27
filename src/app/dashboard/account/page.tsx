@@ -16,11 +16,7 @@ type AccountPageProps = {
   };
 };
 
-function planLabel(plan?: string | null, role?: string | null) {
-  if (role === "admin") {
-    return "Admin";
-  }
-
+function planLabel(plan?: string | null) {
   if (plan === "trial") {
     return "Trial";
   }
@@ -49,7 +45,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
   const { data: profile, error } = await supabase
     .from("profiles")
     .select(
-      "full_name, business_name, plan, role, subscription_status, trial_expires_at, paypal_subscription_id, cancelled_at, data_deletion_requested_at",
+      "full_name, business_name, plan, subscription_status, trial_expires_at, paypal_subscription_id, cancelled_at, data_deletion_requested_at",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -60,13 +56,10 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
 
   const details = [
     { label: "Email", value: user.email ?? "Not available" },
-    { label: "Current plan", value: planLabel(profile?.plan, profile?.role) },
+    { label: "Current plan", value: planLabel(profile?.plan) },
     {
       label: "Subscription status",
-      value:
-        profile?.role === "admin"
-          ? "Admin access"
-          : profile?.subscription_status ?? "Not active",
+      value: profile?.subscription_status ?? "Not active",
     },
     {
       label: "Trial expiry",

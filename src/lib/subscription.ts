@@ -1,19 +1,10 @@
 type ProfileSubscription = {
   plan?: string | null;
-  role?: string | null;
   subscription_status?: string | null;
   trial_expires_at?: string | null;
 };
 
-export function isAdmin(profile: ProfileSubscription | null) {
-  return profile?.role === "admin";
-}
-
 export function hasActiveSubscription(profile: ProfileSubscription | null) {
-  if (isAdmin(profile)) {
-    return true;
-  }
-
   if (!profile?.plan || profile.subscription_status !== "active") {
     return false;
   }

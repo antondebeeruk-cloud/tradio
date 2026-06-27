@@ -64,7 +64,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan, role, subscription_status, trial_expires_at")
+    .select("plan, subscription_status, trial_expires_at")
     .eq("id", user.id)
     .maybeSingle();
 

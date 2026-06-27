@@ -15,7 +15,7 @@ create table if not exists public.profiles (
   lead_email_slug text unique,
   lead_email_address text unique,
   role text not null default 'user'
-    check (role in ('user', 'admin')),
+    check (role = 'user'),
   plan text,
   subscription_status text,
   trial_expires_at timestamptz,
@@ -287,14 +287,6 @@ create table if not exists public.invoice_reminders (
   created_at timestamptz not null default now()
 );
 
-create table if not exists public.admin_support_access_logs (
-  id uuid primary key default gen_random_uuid(),
-  admin_user_id uuid not null references auth.users (id) on delete cascade,
-  target_user_id uuid references auth.users (id) on delete set null,
-  action text not null,
-  created_at timestamptz not null default now()
-);
-
 create index if not exists customers_user_id_idx on public.customers (user_id);
 create index if not exists quotes_user_id_idx on public.quotes (user_id);
 create index if not exists quotes_customer_id_idx on public.quotes (customer_id);
@@ -339,13 +331,6 @@ create index if not exists invoice_reminders_user_id_idx
   on public.invoice_reminders (user_id, sent_at desc);
 create index if not exists invoice_reminders_invoice_id_idx
   on public.invoice_reminders (invoice_id, sent_at desc);
-create index if not exists admin_support_access_logs_admin_user_id_idx
-  on public.admin_support_access_logs (admin_user_id);
-create index if not exists admin_support_access_logs_target_user_id_idx
-  on public.admin_support_access_logs (target_user_id);
-create index if not exists admin_support_access_logs_created_at_idx
-  on public.admin_support_access_logs (created_at desc);
-
 alter table public.profiles enable row level security;
 alter table public.customers enable row level security;
 alter table public.quotes enable row level security;
@@ -381,19 +366,6 @@ create policy "Users can delete their own receipt attachments"
     bucket_id = 'receipt-attachments'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
-alter table public.admin_support_access_logs enable row level security;
-
-create or replace function public.current_profile_role()
-returns text
-language sql
-security definer
-set search_path = public
-as $$
-  select role
-  from public.profiles
-  where id = auth.uid()
-$$;
-
 create policy "Users can view their own profile"
   on public.profiles for select
   using (id = auth.uid());
@@ -405,13 +377,7 @@ create policy "Users can create their own profile"
 create policy "Users can update their own profile"
   on public.profiles for update
   using (id = auth.uid())
-  with check (
-    id = auth.uid()
-    and (
-      role = public.current_profile_role()
-      or public.current_profile_role() = 'admin'
-    )
-  );
+  with check (id = auth.uid() and role = 'user');
 
 create policy "Users can delete their own profile"
   on public.profiles for delete
@@ -755,25 +721,61 @@ create policy "Users can delete their own leads"
   on public.leads for delete
   using (user_id = auth.uid());
 
-create policy "Admins can view support access logs"
-  on public.admin_support_access_logs for select
-  using (
-    exists (
-      select 1
-      from public.profiles
-      where profiles.id = auth.uid()
-        and profiles.role = 'admin'
+
+-- All signed-in users can use Jobs and Receipts. RLS still isolates each user.
+drop policy if exists "Users can view their own jobs" on public.jobs;
+create policy "Users can view their own jobs"
+  on public.jobs for select using (user_id = auth.uid());
+
+drop policy if exists "Users can create their own jobs" on public.jobs;
+create policy "Users can create their own jobs"
+  on public.jobs for insert with check (user_id = auth.uid());
+
+drop policy if exists "Users can update their own jobs" on public.jobs;
+create policy "Users can update their own jobs"
+  on public.jobs for update
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+drop policy if exists "Users can delete their own jobs" on public.jobs;
+create policy "Users can delete their own jobs"
+  on public.jobs for delete using (user_id = auth.uid());
+
+drop policy if exists "Users can view their own job costs" on public.job_costs;
+create policy "Users can view their own job costs"
+  on public.job_costs for select using (user_id = auth.uid());
+
+drop policy if exists "Users can create their own job costs" on public.job_costs;
+create policy "Users can create their own job costs"
+  on public.job_costs for insert
+  with check (
+    user_id = auth.uid()
+    and (
+      job_id is null
+      or exists (
+        select 1 from public.jobs
+        where jobs.id = job_costs.job_id
+          and jobs.user_id = auth.uid()
+      )
     )
   );
 
-create policy "Admins can create support access logs"
-  on public.admin_support_access_logs for insert
+drop policy if exists "Users can update their own job costs" on public.job_costs;
+create policy "Users can update their own job costs"
+  on public.job_costs for update
+  using (user_id = auth.uid())
   with check (
-    admin_user_id = auth.uid()
-    and exists (
-      select 1
-      from public.profiles
-      where profiles.id = auth.uid()
-        and profiles.role = 'admin'
+    user_id = auth.uid()
+    and (
+      job_id is null
+      or exists (
+        select 1 from public.jobs
+        where jobs.id = job_costs.job_id
+          and jobs.user_id = auth.uid()
+      )
     )
   );
+
+drop policy if exists "Users can delete their own job costs" on public.job_costs;
+create policy "Users can delete their own job costs"
+  on public.job_costs for delete using (user_id = auth.uid());

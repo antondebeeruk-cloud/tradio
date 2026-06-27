@@ -10,8 +10,6 @@ export const tradioModules = {
   support: { label: "Support", href: "/dashboard/support" },
   settings: { label: "Settings", href: "/settings" },
   account: { label: "Account", href: "/dashboard/account" },
-  admin: { label: "Admin", href: "/dashboard/admin" },
 } as const;
 
 export type TradioModuleId = keyof typeof tradioModules;
-
