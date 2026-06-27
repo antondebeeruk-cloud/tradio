@@ -7,7 +7,6 @@ import {
   uploadReceiptAttachment,
 } from "@/lib/receipt-attachments";
 import { queueReceiptScan } from "@/lib/receipt-ocr";
-import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 const jobStatuses = [
@@ -35,9 +34,6 @@ type JobStatus = (typeof jobStatuses)[number];
 type CostType = (typeof costTypes)[number];
 type PurchaseType = (typeof purchaseTypes)[number];
 type ReceiptCategory = (typeof receiptCategories)[number];
-
-const upgradeMessage =
-  "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -91,7 +87,7 @@ function completedAtFor(status: JobStatus, existingCompletedAt?: string | null) 
   return null;
 }
 
-async function requireEliteUser() {
+async function requireUser() {
   const supabase = createClient();
   const {
     data: { user },
@@ -101,21 +97,11 @@ async function requireEliteUser() {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("plan, role, subscription_status, trial_expires_at")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!hasEliteAccess(profile)) {
-    redirect(`/pricing?message=${encodeURIComponent(upgradeMessage)}`);
-  }
-
   return { supabase, user };
 }
 
 export async function createJob(formData: FormData) {
-  const { supabase, user } = await requireEliteUser();
+  const { supabase, user } = await requireUser();
   const title = getString(formData, "title");
   const customerId = getString(formData, "customer_id");
   const statusValue = getString(formData, "status") || "not_started";
@@ -155,7 +141,7 @@ export async function createJob(formData: FormData) {
 }
 
 export async function updateJob(formData: FormData) {
-  const { supabase, user } = await requireEliteUser();
+  const { supabase, user } = await requireUser();
   const id = getString(formData, "id");
   const title = getString(formData, "title");
   const customerId = getString(formData, "customer_id");
@@ -193,7 +179,7 @@ export async function updateJob(formData: FormData) {
 }
 
 export async function updateJobStatus(formData: FormData) {
-  const { supabase, user } = await requireEliteUser();
+  const { supabase, user } = await requireUser();
   const id = getString(formData, "id");
   const statusValue = getString(formData, "status");
   const existingCompletedAt = optionalString(formData, "completed_at");
@@ -221,7 +207,7 @@ export async function updateJobStatus(formData: FormData) {
 }
 
 export async function deleteJob(formData: FormData) {
-  const { supabase, user } = await requireEliteUser();
+  const { supabase, user } = await requireUser();
   const id = getString(formData, "id");
 
   if (!id) {
@@ -243,7 +229,7 @@ export async function deleteJob(formData: FormData) {
 }
 
 export async function createJobCost(formData: FormData) {
-  const { supabase, user } = await requireEliteUser();
+  const { supabase, user } = await requireUser();
   const jobId = getString(formData, "job_id");
   const description = getString(formData, "description");
   const costTypeValue = getString(formData, "cost_type") || "receipt";
@@ -333,7 +319,7 @@ export async function createJobCost(formData: FormData) {
 }
 
 export async function deleteJobCost(formData: FormData) {
-  const { supabase, user } = await requireEliteUser();
+  const { supabase, user } = await requireUser();
   const id = getString(formData, "id");
 
   if (!id) {

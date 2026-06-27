@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { currency, formatDate } from "@/lib/documents";
 import { createReportPdf } from "@/lib/report-pdf";
-import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 type NamedRelation =
@@ -64,15 +63,9 @@ export async function GET(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select(
-      "business_name, plan, role, subscription_status, trial_expires_at",
-    )
+    .select("business_name")
     .eq("id", user.id)
     .maybeSingle();
-
-  if (!hasEliteAccess(profile)) {
-    return NextResponse.redirect(new URL("/pricing", request.url));
-  }
 
   const [quotesResult, invoicesResult, jobsResult, jobCostsResult] =
     await Promise.all([

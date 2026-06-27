@@ -10,11 +10,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { currency } from "@/lib/documents";
-import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
-
-const upgradeMessage =
-  "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.";
 
 const jobStatusLabels: Record<string, string> = {
   cancelled: "Cancelled",
@@ -83,13 +79,9 @@ export default async function ReportsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan, role, subscription_status, trial_expires_at")
+    .select("plan")
     .eq("id", user.id)
     .maybeSingle();
-
-  if (!hasEliteAccess(profile)) {
-    redirect(`/pricing?message=${encodeURIComponent(upgradeMessage)}`);
-  }
 
   const [quotesResult, invoicesResult, jobsResult, jobCostsResult] =
     await Promise.all([

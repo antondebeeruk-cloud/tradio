@@ -24,7 +24,6 @@ import {
   signedReceiptDownloadUrl,
   signedReceiptUrl,
 } from "@/lib/receipt-attachments";
-import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 type JobsPageProps = {
@@ -37,9 +36,6 @@ type RelationWithName =
   | { name?: string | null }
   | { quote_number?: string | null; total?: number | string | null }
   | { invoice_number?: string | null; total?: number | string | null };
-
-const upgradeMessage =
-  "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.";
 
 const jobStatusOptions = [
   { label: "Not started", value: "not_started" },
@@ -128,13 +124,9 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan, role, subscription_status, trial_expires_at")
+    .select("plan")
     .eq("id", user.id)
     .maybeSingle();
-
-  if (!hasEliteAccess(profile)) {
-    redirect(`/pricing?message=${encodeURIComponent(upgradeMessage)}`);
-  }
 
   const [customersResult, quotesResult, invoicesResult, jobsResult, costsResult] =
     await Promise.all([

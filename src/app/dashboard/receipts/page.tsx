@@ -13,7 +13,6 @@ import {
   signedReceiptDownloadUrl,
   signedReceiptUrl,
 } from "@/lib/receipt-attachments";
-import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 type ReceiptsPageProps = {
@@ -28,9 +27,6 @@ type JobRelation = {
   title?: string | null;
   customers?: CustomerRelation | CustomerRelation[] | null;
 };
-
-const upgradeMessage =
-  "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.";
 
 const costTypeLabels: Record<string, string> = {
   receipt: "Receipt",
@@ -104,13 +100,9 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan, role, subscription_status, trial_expires_at")
+    .select("plan")
     .eq("id", user.id)
     .maybeSingle();
-
-  if (!hasEliteAccess(profile)) {
-    redirect(`/pricing?message=${encodeURIComponent(upgradeMessage)}`);
-  }
 
   const [jobsResult, receiptsResult] = await Promise.all([
     supabase

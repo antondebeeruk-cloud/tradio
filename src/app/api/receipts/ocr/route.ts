@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -70,16 +69,6 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("plan, role, subscription_status, trial_expires_at")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!hasEliteAccess(profile)) {
-    return NextResponse.json({ error: "Upgrade required" }, { status: 403 });
   }
 
   const formData = await request.formData();

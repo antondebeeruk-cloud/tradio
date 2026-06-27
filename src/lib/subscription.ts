@@ -30,15 +30,7 @@ export function hasActiveSubscription(profile: ProfileSubscription | null) {
 }
 
 export function hasEliteAccess(profile: ProfileSubscription | null) {
-  if (isAdmin(profile)) {
-    return true;
-  }
-
-  if (!hasActiveSubscription(profile)) {
-    return false;
-  }
-
-  return profile?.plan === "elite" || profile?.plan === "trial";
+  return hasActiveSubscription(profile);
 }
 
 export function trialExpiryDate() {

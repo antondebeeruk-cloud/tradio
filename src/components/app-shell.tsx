@@ -1,7 +1,6 @@
 import {
   FileText,
   LayoutDashboard,
-  Lock,
   LogOut,
   MailPlus,
   BarChart3,
@@ -17,7 +16,6 @@ import { logout } from "@/app/auth/actions";
 import { AccountMenu } from "@/components/account-menu";
 import { TradioLogo } from "@/components/tradio-logo";
 import { hasAdminAccess } from "@/lib/admin-access";
-import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 const navItems = [
@@ -26,24 +24,9 @@ const navItems = [
   { label: "Leads", href: "/dashboard/leads", icon: MailPlus },
   { label: "Quotes", href: "/quotes", icon: FileText },
   { label: "Invoices", href: "/invoices", icon: ReceiptText },
-  {
-    label: "Receipts",
-    href: "/dashboard/receipts",
-    icon: ReceiptText,
-    eliteOnly: true,
-  },
-  {
-    label: "Reports",
-    href: "/dashboard/reports",
-    icon: BarChart3,
-    eliteOnly: true,
-  },
-  {
-    label: "Jobs",
-    href: "/dashboard/jobs",
-    icon: BriefcaseBusiness,
-    eliteOnly: true,
-  },
+  { label: "Receipts", href: "/dashboard/receipts", icon: ReceiptText },
+  { label: "Reports", href: "/dashboard/reports", icon: BarChart3 },
+  { label: "Jobs", href: "/dashboard/jobs", icon: BriefcaseBusiness },
   { label: "Support", href: "/dashboard/support", icon: MessageCircleQuestion },
   { label: "Settings", href: "/settings", icon: Settings },
   {
@@ -71,9 +54,6 @@ type AppShellProps = {
   children: React.ReactNode;
   plan?: string | null;
 };
-
-const eliteUpgradeMessage =
-  "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.";
 
 const activeByHref: Record<string, AppShellProps["active"]> = {
   "/customers": "customers",
@@ -131,19 +111,13 @@ function planLabelFor(plan?: string | null, role?: string | null) {
 
 function NavLink({
   active,
-  canUseElite,
   item,
   mobile = false,
 }: {
   active: AppShellProps["active"];
-  canUseElite: boolean;
   item: (typeof navItems)[number];
   mobile?: boolean;
 }) {
-  const isLocked = item.eliteOnly && !canUseElite;
-  const href = isLocked
-    ? `/pricing?message=${encodeURIComponent(eliteUpgradeMessage)}`
-    : item.href;
   const isActive = activeByHref[item.href] === active;
   const Icon = item.icon;
 
@@ -155,18 +129,9 @@ function NavLink({
             ? "bg-copper text-white"
             : "text-white/72 hover:bg-white/10 hover:text-white"
         }`}
-        href={href}
+        href={item.href}
       >
-        <span className="relative">
-          <Icon aria-hidden="true" size={19} />
-          {isLocked ? (
-            <Lock
-              aria-hidden="true"
-              className="absolute -right-2 -top-1 text-copper"
-              size={11}
-            />
-          ) : null}
-        </span>
+        <Icon aria-hidden="true" size={19} />
         <span className="max-w-full truncate">{item.label}</span>
       </Link>
     );
@@ -179,7 +144,7 @@ function NavLink({
           ? "bg-white/12 text-white shadow-[inset_3px_0_0_#ff5a00,0_10px_24px_rgba(0,0,0,0.12)] ring-1 ring-white/10"
           : "text-white/72 hover:bg-white/10 hover:text-white"
       }`}
-      href={href}
+      href={item.href}
     >
       <span
         className={`flex size-8 items-center justify-center rounded-lg ${
@@ -190,12 +155,6 @@ function NavLink({
       </span>
       <span className="flex min-w-0 flex-1 items-center justify-center gap-2 lg:justify-start">
         {item.label}
-        {isLocked ? (
-          <span className="inline-flex items-center gap-1 rounded-lg bg-copper/20 px-2 py-0.5 text-[11px] font-bold text-white">
-            <Lock aria-hidden="true" size={11} />
-            Elite
-          </span>
-        ) : null}
       </span>
     </Link>
   );
@@ -215,11 +174,6 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
     : { data: null };
   const email = user?.email ?? "";
   const isAdminUser = hasAdminAccess(profile?.role, email);
-  const effectivePlan = isAdminUser ? "admin" : profile?.plan ?? plan;
-  const accessProfile = isAdminUser
-    ? { ...profile, role: "admin" }
-    : profile;
-  const canUseElite = hasEliteAccess(accessProfile);
   const visibleNavItems = navItems.filter(
     (item) => !item.adminOnly || isAdminUser,
   );
@@ -242,7 +196,6 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
             {visibleNavItems.map((item) => (
               <NavLink
                 active={active}
-                canUseElite={canUseElite}
                 item={item}
                 key={item.label}
               />
@@ -297,7 +250,6 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
                 {visibleNavItems.map((item) => (
                   <NavLink
                     active={active}
-                    canUseElite={canUseElite}
                     item={item}
                     key={item.label}
                     mobile

@@ -35,7 +35,7 @@ const packages = [
   },
   {
     button: "Continue with Lite",
-    description: "For sole traders who need customers, quotes, invoices, PDFs.",
+    description: "For sole traders who want access to every Tradio module.",
     icon: CreditCard,
     name: "Lite",
     price: "£5.99/month",
@@ -124,6 +124,8 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                   {[
                     "Customer management",
                     "Quotes and invoices",
+                    "Leads, jobs, and receipts",
+                    "Reports",
                     "PDF exports",
                     "Email customer documents",
                   ].map((feature) => (

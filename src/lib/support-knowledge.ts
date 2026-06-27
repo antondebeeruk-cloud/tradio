@@ -32,12 +32,12 @@ const supportTopics: SupportTopic[] = [
   {
     terms: ["report", "reports", "revenue", "conversion", "stats"],
     answer:
-      "Reports are available on Elite and during the free trial. They show quote totals, accepted quotes, invoices sent, paid invoices, unpaid invoice value, revenue, outstanding value, and quote conversion rate.",
+      "Reports are available to every Tradio user. They show quote totals, accepted quotes, invoices sent, paid invoices, unpaid invoice value, revenue, outstanding value, and quote conversion rate.",
   },
   {
     terms: ["plan", "pricing", "subscription", "trial", "lite", "elite", "paypal", "upgrade"],
     answer:
-      "Tradio has a 10 day free trial, Lite, and Elite. Lite includes the core customer, quote, and invoice workflow. Elite adds Reports and Job Tracking. You can review or upgrade your plan from the Account page.",
+      "Tradio has a 10 day free trial, Lite, and Elite. Every plan can use all Tradio modules, including Reports, Jobs, Receipts, Leads, Quotes, and Invoices. You can review or upgrade your plan from the Account page.",
   },
   {
     terms: ["pdf", "export", "email customer", "attachment", "send email"],

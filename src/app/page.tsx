@@ -48,7 +48,7 @@ const features = [
   },
   {
     description:
-      "Elite users can track jobs from enquiry through completion with dates, notes, and status.",
+      "Track jobs from enquiry through completion with dates, notes, costs, and status.",
     icon: BriefcaseBusiness,
     title: "Track jobs",
   },
@@ -71,20 +71,20 @@ const plans = [
     description: "Try Tradio with no payment required.",
     name: "Free Trial",
     price: "10 days free",
-    points: ["No card needed", "Quotes and invoices", "Lead inbox", "Elite features during trial"],
+    points: ["No card needed", "All Tradio modules", "Reports and jobs", "Lead inbox"],
   },
   {
-    description: "For sole traders who need the core workflow.",
+    description: "For sole traders who want the complete Tradio workflow.",
     name: "Lite",
     price: "£5.99/month",
-    points: ["Customers", "Quotes", "Invoices", "PDF and email export"],
+    points: ["All Tradio modules", "Reports and jobs", "Receipts", "PDF and email export"],
   },
   {
     description: "For growing trade businesses that want everything.",
     featured: true,
     name: "Elite",
     price: "£15.99/month",
-    points: ["Everything in Lite", "Reports", "Job tracking", "Full trial upgrade path"],
+    points: ["All Tradio modules", "Reports and jobs", "Receipts", "Full business workflow"],
   },
 ];
 

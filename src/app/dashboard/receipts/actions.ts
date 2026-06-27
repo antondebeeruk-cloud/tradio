@@ -7,7 +7,6 @@ import {
   uploadReceiptAttachment,
 } from "@/lib/receipt-attachments";
 import { queueReceiptScan } from "@/lib/receipt-ocr";
-import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 const costTypes = ["receipt", "supplier_invoice"] as const;
@@ -28,9 +27,6 @@ const receiptCategories = [
 type CostType = (typeof costTypes)[number];
 type PurchaseType = (typeof purchaseTypes)[number];
 type ReceiptCategory = (typeof receiptCategories)[number];
-
-const upgradeMessage =
-  "Reports and Job Tracking are available on Tradio Elite. Upgrade to unlock these features.";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -81,7 +77,7 @@ function money(value: number) {
   return Number(value.toFixed(2));
 }
 
-async function requireEliteUser() {
+async function requireUser() {
   const supabase = createClient();
   const {
     data: { user },
@@ -91,21 +87,11 @@ async function requireEliteUser() {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("plan, role, subscription_status, trial_expires_at")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!hasEliteAccess(profile)) {
-    redirect(`/pricing?message=${encodeURIComponent(upgradeMessage)}`);
-  }
-
   return { supabase, user };
 }
 
 export async function createReceipt(formData: FormData) {
-  const { supabase, user } = await requireEliteUser();
+  const { supabase, user } = await requireUser();
   const description =
     getString(formData, "description") ||
     (hasAttachmentInput(formData) ? "Uploaded receipt" : "");
@@ -209,7 +195,7 @@ export async function createReceipt(formData: FormData) {
 }
 
 export async function scanReceiptFile(formData: FormData) {
-  const { supabase, user } = await requireEliteUser();
+  const { supabase, user } = await requireUser();
   const id = getString(formData, "id");
 
   if (!id) {
@@ -250,7 +236,7 @@ export async function scanReceiptFile(formData: FormData) {
 }
 
 export async function updateReceiptJob(formData: FormData) {
-  const { supabase, user } = await requireEliteUser();
+  const { supabase, user } = await requireUser();
   const id = getString(formData, "id");
   const jobId = optionalString(formData, "job_id");
 
@@ -291,7 +277,7 @@ export async function updateReceiptJob(formData: FormData) {
 }
 
 export async function deleteReceipt(formData: FormData) {
-  const { supabase, user } = await requireEliteUser();
+  const { supabase, user } = await requireUser();
   const id = getString(formData, "id");
 
   if (!id) {
