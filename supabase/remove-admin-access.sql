@@ -1,20 +1,16 @@
 begin;
 
-update public.profiles
-set role = 'user'
-where role is distinct from 'user';
-
 alter table public.profiles
   drop constraint if exists profiles_role_check;
 
 alter table public.profiles
-  add constraint profiles_role_check check (role = 'user');
+  drop column if exists role;
 
 drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile"
   on public.profiles for update
   using (id = auth.uid())
-  with check (id = auth.uid() and role = 'user');
+  with check (id = auth.uid());
 
 drop policy if exists "Users can view their own jobs" on public.jobs;
 create policy "Users can view their own jobs"
@@ -84,4 +80,3 @@ drop table if exists public.admin_support_access_logs cascade;
 drop function if exists public.current_profile_role();
 
 commit;
-

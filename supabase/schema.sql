@@ -14,8 +14,6 @@ create table if not exists public.profiles (
   vat_number text,
   lead_email_slug text unique,
   lead_email_address text unique,
-  role text not null default 'user'
-    check (role = 'user'),
   plan text,
   subscription_status text,
   trial_expires_at timestamptz,
@@ -372,12 +370,12 @@ create policy "Users can view their own profile"
 
 create policy "Users can create their own profile"
   on public.profiles for insert
-  with check (id = auth.uid() and role = 'user');
+  with check (id = auth.uid());
 
 create policy "Users can update their own profile"
   on public.profiles for update
   using (id = auth.uid())
-  with check (id = auth.uid() and role = 'user');
+  with check (id = auth.uid());
 
 create policy "Users can delete their own profile"
   on public.profiles for delete
@@ -519,8 +517,7 @@ create policy "Users can view their own jobs"
       from public.profiles
       where profiles.id = auth.uid()
         and (
-          profiles.role = 'admin'
-          or (
+          (
             profiles.subscription_status = 'active'
             and profiles.plan = 'elite'
           )
@@ -543,8 +540,7 @@ create policy "Users can create their own jobs"
       from public.profiles
       where profiles.id = auth.uid()
         and (
-          profiles.role = 'admin'
-          or (
+          (
             profiles.subscription_status = 'active'
             and profiles.plan = 'elite'
           )
@@ -567,8 +563,7 @@ create policy "Users can update their own jobs"
       from public.profiles
       where profiles.id = auth.uid()
         and (
-          profiles.role = 'admin'
-          or (
+          (
             profiles.subscription_status = 'active'
             and profiles.plan = 'elite'
           )
@@ -588,8 +583,7 @@ create policy "Users can update their own jobs"
       from public.profiles
       where profiles.id = auth.uid()
         and (
-          profiles.role = 'admin'
-          or (
+          (
             profiles.subscription_status = 'active'
             and profiles.plan = 'elite'
           )
@@ -612,8 +606,7 @@ create policy "Users can delete their own jobs"
       from public.profiles
       where profiles.id = auth.uid()
         and (
-          profiles.role = 'admin'
-          or (
+          (
             profiles.subscription_status = 'active'
             and profiles.plan = 'elite'
           )
@@ -636,8 +629,7 @@ create policy "Users can view their own job costs"
       from public.profiles
       where profiles.id = auth.uid()
         and (
-          profiles.role = 'admin'
-          or (
+          (
             profiles.subscription_status = 'active'
             and profiles.plan = 'elite'
           )
@@ -669,8 +661,7 @@ create policy "Users can create their own job costs"
       from public.profiles
       where profiles.id = auth.uid()
         and (
-          profiles.role = 'admin'
-          or (
+          (
             profiles.subscription_status = 'active'
             and profiles.plan = 'elite'
           )

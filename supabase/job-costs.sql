@@ -92,26 +92,7 @@ create policy "Users can delete their own receipt attachments"
 drop policy if exists "Users can view their own job costs" on public.job_costs;
 create policy "Users can view their own job costs"
   on public.job_costs for select
-  using (
-    user_id = auth.uid()
-    and exists (
-      select 1
-      from public.profiles
-      where profiles.id = auth.uid()
-        and (
-          profiles.role = 'admin'
-          or (
-            profiles.subscription_status = 'active'
-            and profiles.plan = 'elite'
-          )
-          or (
-            profiles.subscription_status = 'active'
-            and profiles.plan = 'trial'
-            and profiles.trial_expires_at > now()
-          )
-        )
-    )
-  );
+  using (user_id = auth.uid());
 
 drop policy if exists "Users can create their own job costs" on public.job_costs;
 create policy "Users can create their own job costs"
@@ -126,23 +107,6 @@ create policy "Users can create their own job costs"
         where jobs.id = job_costs.job_id
           and jobs.user_id = auth.uid()
       )
-    )
-    and exists (
-      select 1
-      from public.profiles
-      where profiles.id = auth.uid()
-        and (
-          profiles.role = 'admin'
-          or (
-            profiles.subscription_status = 'active'
-            and profiles.plan = 'elite'
-          )
-          or (
-            profiles.subscription_status = 'active'
-            and profiles.plan = 'trial'
-            and profiles.trial_expires_at > now()
-          )
-        )
     )
   );
 
