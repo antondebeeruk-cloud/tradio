@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { ModulePanelUnavailable } from "@/components/module-panel-unavailable";
 import { currency, formatDate } from "@/lib/documents";
 import { createClient } from "@/lib/supabase/server";
 
@@ -94,17 +95,6 @@ export default async function DashboardPage() {
       .order("due_date", { ascending: true }),
   ]);
 
-  const firstError =
-    profileResult.error ??
-    customersResult.error ??
-    recentQuotesResult.error ??
-    recentInvoicesResult.error ??
-    unpaidInvoicesResult.error;
-
-  if (firstError) {
-    redirect(`/dashboard?message=${encodeURIComponent(firstError.message)}`);
-  }
-
   const recentQuotes = recentQuotesResult.data ?? [];
   const recentInvoices = recentInvoicesResult.data ?? [];
   const unpaidInvoices = unpaidInvoicesResult.data ?? [];
@@ -122,18 +112,21 @@ export default async function DashboardPage() {
         unpaidInvoices.length === 1 ? "" : "s"
       } unpaid or overdue`,
       icon: AlertCircle,
+      unavailable: Boolean(unpaidInvoicesResult.error),
     },
     {
       label: "Quotes",
       value: String(recentQuotesResult.count ?? 0),
       note: "Total saved quotes",
       icon: FileText,
+      unavailable: Boolean(recentQuotesResult.error),
     },
     {
       label: "Customers",
       value: String(customersResult.count ?? 0),
       note: "Saved contacts",
       icon: UsersRound,
+      unavailable: Boolean(customersResult.error),
     },
   ];
 
@@ -175,8 +168,14 @@ export default async function DashboardPage() {
                   <stat.icon aria-hidden="true" size={18} />
                 </div>
               </div>
-              <p className="mt-3 text-2xl font-semibold text-ink">{stat.value}</p>
-              <p className="mt-1 text-sm text-slate-500">{stat.note}</p>
+              <p className="mt-3 text-2xl font-semibold text-ink">
+                {stat.unavailable ? "Unavailable" : stat.value}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                {stat.unavailable
+                  ? "This module can be retried independently."
+                  : stat.note}
+              </p>
             </article>
           ))}
         </div>
@@ -199,7 +198,9 @@ export default async function DashboardPage() {
               </Link>
             </div>
             <div className="divide-y divide-field">
-              {unpaidInvoices.length > 0 ? (
+              {unpaidInvoicesResult.error ? (
+                <ModulePanelUnavailable href="/invoices" label="Invoices" />
+              ) : unpaidInvoices.length > 0 ? (
                 unpaidInvoices.slice(0, 5).map((invoice) => (
                   <div
                     className="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto] sm:items-center"
@@ -254,7 +255,9 @@ export default async function DashboardPage() {
               </Link>
             </div>
             <div className="divide-y divide-field">
-              {recentQuotes.length > 0 ? (
+              {recentQuotesResult.error ? (
+                <ModulePanelUnavailable href="/quotes" label="Quotes" />
+              ) : recentQuotes.length > 0 ? (
                 recentQuotes.map((quote) => (
                   <div
                     className="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto] sm:items-center"
@@ -308,7 +311,9 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="divide-y divide-field">
-            {recentInvoices.length > 0 ? (
+            {recentInvoicesResult.error ? (
+              <ModulePanelUnavailable href="/invoices" label="Invoices" />
+            ) : recentInvoices.length > 0 ? (
               recentInvoices.map((invoice) => (
                 <div
                   className="grid gap-3 px-5 py-4 md:grid-cols-[1fr_auto_auto] md:items-center"
