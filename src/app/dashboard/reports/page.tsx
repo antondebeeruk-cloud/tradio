@@ -26,6 +26,30 @@ const jobStatusClasses: Record<string, string> = {
   not_started: "bg-field text-forest",
 };
 
+const reportDownloads = [
+  {
+    description:
+      "Revenue, material and labour costs, gross profit, margin, and weekly, monthly, and yearly performance.",
+    href: "/dashboard/reports/profit/pdf",
+    icon: TrendingUp,
+    title: "Profit Report",
+  },
+  {
+    description:
+      "Every unpaid invoice with its customer, amount, due date, overdue days, and the total still owed.",
+    href: "/dashboard/reports/outstanding-payments/pdf",
+    icon: ReceiptText,
+    title: "Outstanding Payments",
+  },
+  {
+    description:
+      "Quotes sent, accepted, declined, win rate, and the total value of work won.",
+    href: "/dashboard/reports/quote-success/pdf",
+    icon: FileText,
+    title: "Quote Success Report",
+  },
+];
+
 type NamedRelation =
   | { name?: string | null }
   | { quote_number?: string | null; total?: number | string | null }
@@ -249,14 +273,14 @@ export default async function ReportsPage() {
     <AppShell active="reports" plan={profile?.plan}>
       <header className="app-page-header">
         <div>
-          <p className="eyebrow">Elite reports</p>
+          <p className="eyebrow">Business reports</p>
           <h1 className="page-title">
             See how quotes are turning into paid work.
           </h1>
         </div>
         <Link className="btn-accent" href="/dashboard/reports/pdf">
           <Download aria-hidden="true" size={17} />
-          Download PDF
+          Full report PDF
         </Link>
       </header>
 
@@ -276,6 +300,32 @@ export default async function ReportsPage() {
             </article>
           ))}
         </div>
+
+        <section className="mt-6">
+          <div className="mb-4">
+            <p className="eyebrow">PDF reports</p>
+            <h2 className="mt-1 text-lg font-semibold">
+              Download the figures you need.
+            </h2>
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {reportDownloads.map((report) => (
+              <article className="surface-pad flex flex-col" key={report.title}>
+                <div className="flex size-10 items-center justify-center rounded-lg bg-field text-forest">
+                  <report.icon aria-hidden="true" size={20} />
+                </div>
+                <h3 className="mt-4 font-semibold">{report.title}</h3>
+                <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">
+                  {report.description}
+                </p>
+                <Link className="btn-primary mt-5 w-full" href={report.href}>
+                  <Download aria-hidden="true" size={17} />
+                  Download PDF
+                </Link>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <section className="surface mt-6 overflow-hidden">
           <div className="section-bar">
