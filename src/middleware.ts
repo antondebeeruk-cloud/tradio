@@ -21,6 +21,14 @@ function clearSupabaseCookies(request: NextRequest, response: NextResponse) {
   return response;
 }
 
+function requestHostname(request: NextRequest) {
+  return (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "")
+    .split(",")[0]
+    .trim()
+    .split(":")[0]
+    .toLowerCase();
+}
+
 function hasActivePlan(profile: {
   plan?: string | null;
   subscription_status?: string | null;
@@ -42,23 +50,74 @@ function hasActivePlan(profile: {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const isProtectedRoute =
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/customers") ||
-    pathname.startsWith("/quotes") ||
-    pathname.startsWith("/invoices") ||
-    pathname.startsWith("/settings");
-  const isPricingRoute = pathname.startsWith("/pricing");
-  const isAuthRoute = pathname === "/login" || pathname === "/signup";
-  const needsAuthCheck = isProtectedRoute || isPricingRoute || isAuthRoute;
+  const hostname = requestHostname(request);
+  const isAdminHost =
+    hostname === "admin.tradio.uk" || hostname === "admin.localhost";
+  const adminRewritePath =
+    isAdminHost && pathname === "/"
+      ? "/admin"
+      : isAdminHost && pathname === "/login"
+        ? "/admin/login"
+        : null;
+  const routePath = adminRewritePath ?? pathname;
 
-  if (!needsAuthCheck) {
-    return NextResponse.next();
+  if (
+    routePath.startsWith("/admin") &&
+    !isAdminHost &&
+    (hostname === "tradio.uk" || hostname === "www.tradio.uk")
+  ) {
+    const adminPath = routePath === "/admin" ? "/" : routePath;
+    return NextResponse.redirect(
+      new URL(`${adminPath}${request.nextUrl.search}`, "https://admin.tradio.uk"),
+    );
   }
 
-  let response = NextResponse.next({
-    request,
-  });
+  if (
+    isAdminHost &&
+    pathname !== "/" &&
+    pathname !== "/login" &&
+    !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/auth")
+  ) {
+    const adminHome = request.nextUrl.clone();
+    adminHome.pathname = "/";
+    adminHome.search = "";
+    return NextResponse.redirect(adminHome);
+  }
+
+  const isProtectedRoute =
+    routePath.startsWith("/dashboard") ||
+    routePath.startsWith("/customers") ||
+    routePath.startsWith("/quotes") ||
+    routePath.startsWith("/invoices") ||
+    routePath.startsWith("/settings");
+  const isPricingRoute = routePath.startsWith("/pricing");
+  const isAuthRoute = routePath === "/login" || routePath === "/signup";
+  const isAdminLoginRoute = routePath === "/admin/login";
+  const isAdminRoute = routePath.startsWith("/admin") && !isAdminLoginRoute;
+  const needsAuthCheck =
+    isProtectedRoute ||
+    isPricingRoute ||
+    isAuthRoute ||
+    isAdminRoute ||
+    isAdminLoginRoute;
+
+  const nextResponse = () => {
+    if (adminRewritePath) {
+      const rewriteUrl = request.nextUrl.clone();
+      rewriteUrl.pathname = adminRewritePath;
+      return NextResponse.rewrite(rewriteUrl);
+    }
+
+    return NextResponse.next({ request });
+  };
+
+  if (!needsAuthCheck) {
+    return nextResponse();
+  }
+
+  let response = nextResponse();
   const hasSession = hasSupabaseSessionCookie(request);
   let hasValidSession = false;
   let hasPlanAccess = false;
@@ -83,9 +142,7 @@ export async function middleware(request: NextRequest) {
             cookiesToSet.forEach(({ name, value }) => {
               request.cookies.set(name, value);
             });
-            response = NextResponse.next({
-              request,
-            });
+            response = nextResponse();
             cookiesToSet.forEach(({ name, value, options }) => {
               response.cookies.set(name, value, options);
             });
@@ -117,10 +174,13 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if ((isProtectedRoute || isPricingRoute) && !hasValidSession) {
+  if (
+    (isProtectedRoute || isPricingRoute || isAdminRoute) &&
+    !hasValidSession
+  ) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("redirectedFrom", pathname);
+    redirectUrl.pathname = isAdminRoute ? "/admin/login" : "/login";
+    redirectUrl.searchParams.set("redirectedFrom", routePath);
     redirectUrl.searchParams.set(
       "message",
       hasSession
