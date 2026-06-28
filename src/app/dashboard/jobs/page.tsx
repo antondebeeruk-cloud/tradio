@@ -148,7 +148,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
       supabase
         .from("jobs")
         .select(
-          "id, customer_id, title, description, status, start_date, due_date, completed_at, related_quote_id, related_invoice_id, notes, created_at, customers(name), quotes(quote_number,total), invoices(invoice_number,total)",
+          "id, customer_id, title, job_type, description, status, start_date, due_date, completed_at, related_quote_id, related_invoice_id, notes, created_at, customers(name), quotes(quote_number,total), invoices(invoice_number,total)",
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
@@ -207,7 +207,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
     <AppShell active="jobs" plan={profile?.plan}>
       <header className="app-page-header">
         <div>
-          <p className="eyebrow">Elite job tracking</p>
+          <p className="eyebrow">Job tracking</p>
           <h1 className="page-title">
             Track work from first quote to completed job.
           </h1>
@@ -259,6 +259,18 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                   Job title
                 </label>
                 <input className="field-control" id="title" name="title" required />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium" htmlFor="job_type">
+                  Job type
+                </label>
+                <input
+                  className="field-control"
+                  id="job_type"
+                  name="job_type"
+                  placeholder="Bathrooms, Boilers, Leaks, Call-outs..."
+                />
               </div>
 
               <div>
@@ -399,6 +411,11 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                         </p>
                       ) : null}
                       <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+                        {job.job_type ? (
+                          <span className="rounded-lg bg-[#fff0e7] px-2 py-1 text-[#d94800]">
+                            Type: {job.job_type}
+                          </span>
+                        ) : null}
                         {relationName(job.quotes) ? (
                           <span className="rounded-lg bg-field px-2 py-1">
                             Quote: {relationName(job.quotes)}
@@ -720,6 +737,16 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                           defaultValue={job.title}
                           name="title"
                           required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Job type</label>
+                        <input
+                          className="field-control"
+                          defaultValue={job.job_type ?? ""}
+                          name="job_type"
+                          placeholder="Bathrooms, Boilers, Leaks, Call-outs..."
                         />
                       </div>
 

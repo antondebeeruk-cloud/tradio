@@ -143,6 +143,7 @@ create table if not exists public.jobs (
   user_id uuid not null references auth.users (id) on delete cascade,
   customer_id uuid not null,
   title text not null,
+  job_type text,
   description text,
   status text not null default 'not_started'
     check (status in ('not_started', 'in_progress', 'completed', 'cancelled')),
@@ -295,6 +296,7 @@ create index if not exists invoice_items_invoice_id_idx on public.invoice_items 
 create index if not exists jobs_user_id_idx on public.jobs (user_id);
 create index if not exists jobs_customer_id_idx on public.jobs (customer_id);
 create index if not exists jobs_status_idx on public.jobs (user_id, status);
+create index if not exists jobs_job_type_idx on public.jobs (user_id, job_type);
 create index if not exists job_costs_user_id_idx on public.job_costs (user_id);
 create index if not exists job_costs_job_id_idx on public.job_costs (job_id);
 create index if not exists job_costs_purchase_date_idx on public.job_costs (user_id, purchase_date desc);

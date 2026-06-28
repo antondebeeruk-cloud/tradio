@@ -3,6 +3,7 @@ create table if not exists public.jobs (
   user_id uuid not null references auth.users (id) on delete cascade,
   customer_id uuid not null,
   title text not null,
+  job_type text,
   description text,
   status text not null default 'not_started'
     check (status in ('not_started', 'in_progress', 'completed', 'cancelled')),
@@ -22,6 +23,7 @@ create table if not exists public.jobs (
 create index if not exists jobs_user_id_idx on public.jobs (user_id);
 create index if not exists jobs_customer_id_idx on public.jobs (customer_id);
 create index if not exists jobs_status_idx on public.jobs (user_id, status);
+create index if not exists jobs_job_type_idx on public.jobs (user_id, job_type);
 
 alter table public.jobs enable row level security;
 

@@ -10,6 +10,22 @@ type ReportRouteProps = {
 };
 
 type CustomerRelation = { name?: string | null };
+type TotalRelation = { total?: number | string | null };
+
+type JobForReport = {
+  customers: CustomerRelation | CustomerRelation[] | null;
+  id: string;
+  invoices: TotalRelation | TotalRelation[] | null;
+  job_type: string | null;
+  quotes: TotalRelation | TotalRelation[] | null;
+  title: string;
+};
+
+type CostForReport = {
+  category: string | null;
+  job_id: string | null;
+  total: number | string | null;
+};
 
 type PeriodTotals = {
   costs: number;
@@ -32,6 +48,46 @@ function numberValue(value: unknown) {
 function relationName(relation: CustomerRelation | CustomerRelation[] | null) {
   const customer = Array.isArray(relation) ? relation[0] : relation;
   return customer?.name ?? "Customer removed";
+}
+
+function relationTotal(relation: TotalRelation | TotalRelation[] | null) {
+  const value = Array.isArray(relation) ? relation[0] : relation;
+  return numberValue(value?.total);
+}
+
+function jobFigures(jobs: JobForReport[], costs: CostForReport[]) {
+  const costsByJob = costs.reduce<Record<string, CostForReport[]>>(
+    (map, cost) => {
+      if (!cost.job_id) return map;
+      (map[cost.job_id] ??= []).push(cost);
+      return map;
+    },
+    {},
+  );
+
+  return jobs.map((job) => {
+    const jobCosts = costsByJob[job.id] ?? [];
+    const income = relationTotal(job.invoices) || relationTotal(job.quotes);
+    const materials = jobCosts
+      .filter((cost) => cost.category === "materials")
+      .reduce((total, cost) => total + numberValue(cost.total), 0);
+    const totalCosts = jobCosts.reduce(
+      (total, cost) => total + numberValue(cost.total),
+      0,
+    );
+    const profit = income - totalCosts;
+
+    return {
+      customerName: relationName(job.customers),
+      income,
+      jobType: job.job_type?.trim() || job.title,
+      margin: income > 0 ? (profit / income) * 100 : 0,
+      materials,
+      profit,
+      title: job.title,
+      totalCosts,
+    };
+  });
 }
 
 function startOfWeek(value: string) {
@@ -205,6 +261,214 @@ async function profitReport(
   });
 }
 
+async function monthlyRevenueReport(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  businessName: string,
+) {
+  const { data, error } = await supabase
+    .from("invoices")
+    .select("issue_date, total")
+    .eq("user_id", userId)
+    .eq("status", "paid");
+
+  if (error) throw error;
+
+  const revenueByMonth = (data ?? []).reduce<Record<string, number>>(
+    (map, invoice) => {
+      const key = invoice.issue_date.slice(0, 7);
+      map[key] = (map[key] ?? 0) + numberValue(invoice.total);
+      return map;
+    },
+    {},
+  );
+  const monthKeys = Array.from({ length: 12 }, (_, offset) => {
+    const date = new Date();
+    date.setUTCDate(1);
+    date.setUTCMonth(date.getUTCMonth() - (11 - offset));
+    return date.toISOString().slice(0, 7);
+  });
+  const rows = monthKeys.map((key) => [
+    periodLabel(key, "month"),
+    money(revenueByMonth[key] ?? 0),
+  ]);
+  const values = monthKeys.map((key) => revenueByMonth[key] ?? 0);
+  const totalRevenue = values.reduce((total, value) => total + value, 0);
+  const bestIndex = values.indexOf(Math.max(...values));
+  const slowestIndex = values.indexOf(Math.min(...values));
+
+  return createFinancialReportPdf({
+    businessName,
+    generatedAt: formatDate(new Date().toISOString()),
+    sections: [
+      {
+        columns: [
+          { label: "Month", x: 50 },
+          { label: "Revenue", x: 300 },
+        ],
+        rows,
+        title: "Revenue month by month",
+      },
+    ],
+    stats: [
+      { label: "Revenue in the last 12 months", value: money(totalRevenue) },
+      { label: "Average monthly revenue", value: money(totalRevenue / 12) },
+      {
+        label: "Strongest month",
+        value: `${periodLabel(monthKeys[bestIndex], "month")} - ${money(values[bestIndex])}`,
+      },
+      {
+        label: "Slowest month",
+        value: `${periodLabel(monthKeys[slowestIndex], "month")} - ${money(values[slowestIndex])}`,
+      },
+    ],
+    title: "Monthly Revenue Report",
+  });
+}
+
+async function loadCompletedJobFigures(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+) {
+  const [jobsResult, costsResult] = await Promise.all([
+    supabase
+      .from("jobs")
+      .select(
+        "id, title, job_type, customers(name), quotes(total), invoices(total)",
+      )
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false }),
+    supabase
+      .from("job_costs")
+      .select("job_id, category, total")
+      .eq("user_id", userId),
+  ]);
+
+  const error = jobsResult.error ?? costsResult.error;
+  if (error) throw error;
+
+  return jobFigures(
+    (jobsResult.data ?? []) as unknown as JobForReport[],
+    (costsResult.data ?? []) as CostForReport[],
+  );
+}
+
+async function jobProfitabilityReport(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  businessName: string,
+) {
+  const jobs = await loadCompletedJobFigures(supabase, userId);
+  const income = jobs.reduce((total, job) => total + job.income, 0);
+  const costs = jobs.reduce((total, job) => total + job.totalCosts, 0);
+  const profit = income - costs;
+  const margin = income > 0 ? (profit / income) * 100 : 0;
+
+  return createFinancialReportPdf({
+    businessName,
+    generatedAt: formatDate(new Date().toISOString()),
+    sections: [
+      {
+        columns: [
+          { label: "Completed job", x: 50 },
+          { label: "Income", x: 250 },
+          { label: "Materials", x: 330 },
+          { label: "All costs", x: 410 },
+          { label: "Profit", x: 485 },
+          { label: "Margin", x: 540 },
+        ],
+        rows: jobs.map((job) => [
+          `${job.title} - ${job.customerName}`,
+          money(job.income),
+          money(job.materials),
+          money(job.totalCosts),
+          money(job.profit),
+          `${job.margin.toFixed(1)}%`,
+        ]),
+        title: "Completed job profitability",
+      },
+    ],
+    stats: [
+      { label: "Completed jobs", value: String(jobs.length) },
+      { label: "Income", value: money(income) },
+      { label: "Costs", value: money(costs) },
+      { label: "Profit", value: money(profit) },
+      { label: "Overall margin", value: `${margin.toFixed(1)}%` },
+    ],
+    title: "Job Profitability",
+  });
+}
+
+async function bestJobTypesReport(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  businessName: string,
+) {
+  const jobs = await loadCompletedJobFigures(supabase, userId);
+  const grouped = jobs.reduce<
+    Record<
+      string,
+      { count: number; costs: number; income: number; label: string; profit: number }
+    >
+  >((map, job) => {
+    const key = job.jobType.toLowerCase();
+    const group = (map[key] ??= {
+      count: 0,
+      costs: 0,
+      income: 0,
+      label: job.jobType,
+      profit: 0,
+    });
+    group.count += 1;
+    group.costs += job.totalCosts;
+    group.income += job.income;
+    group.profit += job.profit;
+    return map;
+  }, {});
+  const groups = Object.values(grouped).sort(
+    (left, right) => right.profit - left.profit,
+  );
+  const best = groups[0];
+
+  return createFinancialReportPdf({
+    businessName,
+    generatedAt: formatDate(new Date().toISOString()),
+    sections: [
+      {
+        columns: [
+          { label: "Job type", x: 50 },
+          { label: "Jobs", x: 235 },
+          { label: "Income", x: 300 },
+          { label: "Costs", x: 390 },
+          { label: "Profit", x: 470 },
+          { label: "Margin", x: 535 },
+        ],
+        rows: groups.map((group) => {
+          const margin =
+            group.income > 0 ? (group.profit / group.income) * 100 : 0;
+          return [
+            group.label,
+            String(group.count),
+            money(group.income),
+            money(group.costs),
+            money(group.profit),
+            `${margin.toFixed(1)}%`,
+          ];
+        }),
+        title: "Profit by job type",
+      },
+    ],
+    stats: [
+      { label: "Completed jobs analysed", value: String(jobs.length) },
+      { label: "Job types", value: String(groups.length) },
+      { label: "Most profitable job type", value: best?.label ?? "No data" },
+      { label: "Best job type profit", value: money(best?.profit ?? 0) },
+    ],
+    title: "Best Job Types",
+  });
+}
+
 async function outstandingReport(
   supabase: ReturnType<typeof createClient>,
   userId: string,
@@ -342,6 +606,15 @@ export async function GET(request: Request, { params }: ReportRouteProps) {
     if (params.report === "profit") {
       pdf = await profitReport(supabase, user.id, businessName);
       filename = "tradio-profit-report.pdf";
+    } else if (params.report === "monthly-revenue") {
+      pdf = await monthlyRevenueReport(supabase, user.id, businessName);
+      filename = "tradio-monthly-revenue.pdf";
+    } else if (params.report === "job-profitability") {
+      pdf = await jobProfitabilityReport(supabase, user.id, businessName);
+      filename = "tradio-job-profitability.pdf";
+    } else if (params.report === "best-job-types") {
+      pdf = await bestJobTypesReport(supabase, user.id, businessName);
+      filename = "tradio-best-job-types.pdf";
     } else if (params.report === "outstanding-payments") {
       pdf = await outstandingReport(supabase, user.id, businessName);
       filename = "tradio-outstanding-payments.pdf";

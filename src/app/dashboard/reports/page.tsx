@@ -48,6 +48,27 @@ const reportDownloads = [
     icon: FileText,
     title: "Quote Success Report",
   },
+  {
+    description:
+      "Paid invoice revenue for each of the last 12 months, including the strongest and slowest months.",
+    href: "/dashboard/reports/monthly-revenue/pdf",
+    icon: BarChart3,
+    title: "Monthly Revenue Report",
+  },
+  {
+    description:
+      "Income, materials, total costs, profit, and margin for every completed job.",
+    href: "/dashboard/reports/job-profitability/pdf",
+    icon: BriefcaseBusiness,
+    title: "Job Profitability",
+  },
+  {
+    description:
+      "Group completed jobs by type to reveal which categories produce the most profit.",
+    href: "/dashboard/reports/best-job-types/pdf",
+    icon: TrendingUp,
+    title: "Best Job Types",
+  },
 ];
 
 type NamedRelation =

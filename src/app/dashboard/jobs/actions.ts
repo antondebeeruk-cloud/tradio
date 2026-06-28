@@ -122,6 +122,7 @@ export async function createJob(formData: FormData) {
     user_id: user.id,
     customer_id: customerId,
     title,
+    job_type: optionalString(formData, "job_type"),
     description: optionalString(formData, "description"),
     status: statusValue,
     start_date: optionalString(formData, "start_date"),
@@ -157,6 +158,7 @@ export async function updateJob(formData: FormData) {
     .update({
       customer_id: customerId,
       title,
+      job_type: optionalString(formData, "job_type"),
       description: optionalString(formData, "description"),
       status: statusValue,
       start_date: optionalString(formData, "start_date"),
