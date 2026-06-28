@@ -159,7 +159,9 @@ export async function createMockLeadForUser({
   userId,
 }: {
   leadEmailAddress: string;
-  supabase: ReturnType<typeof import("@/lib/supabase/server").createClient>;
+  supabase: Awaited<
+    ReturnType<typeof import("@/lib/supabase/server").createClient>
+  >;
   userId: string;
 }) {
   const bodyText = [

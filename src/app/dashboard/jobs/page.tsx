@@ -27,9 +27,9 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 type JobsPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     message?: string;
-  };
+  }>;
 };
 
 type RelationWithName =
@@ -113,7 +113,8 @@ function numberValue(value: unknown) {
 }
 
 export default async function JobsPage({ searchParams }: JobsPageProps) {
-  const supabase = createClient();
+  const search = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -215,8 +216,8 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
       </header>
 
       <div className="app-page-body">
-        {searchParams.message ? (
-          <p className="notice mb-5">{searchParams.message}</p>
+        {search.message ? (
+          <p className="notice mb-5">{search.message}</p>
         ) : null}
         {jobCostsTableMissing ? (
           <p className="notice mb-5">

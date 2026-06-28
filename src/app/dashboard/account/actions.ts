@@ -6,7 +6,7 @@ import { cancelPayPalSubscription } from "@/lib/paypal";
 import { createClient } from "@/lib/supabase/server";
 
 async function requireUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

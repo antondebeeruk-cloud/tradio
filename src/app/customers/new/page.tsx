@@ -6,16 +6,17 @@ import { CustomerForm } from "@/components/customer-form";
 import { createClient } from "@/lib/supabase/server";
 
 type NewCustomerPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     message?: string;
     returnTo?: string;
-  };
+  }>;
 };
 
 export default async function NewCustomerPage({
   searchParams,
 }: NewCustomerPageProps) {
-  const supabase = createClient();
+  const search = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -30,7 +31,7 @@ export default async function NewCustomerPage({
     .eq("id", user.id)
     .maybeSingle();
   const returnTo =
-    searchParams.returnTo === "/quotes/new" ? "/quotes/new" : "/customers";
+    search.returnTo === "/quotes/new" ? "/quotes/new" : "/customers";
 
   return (
     <AppShell active="customers" plan={profile?.plan}>
@@ -59,7 +60,7 @@ export default async function NewCustomerPage({
 
           <CustomerForm
             action={createCustomer}
-            message={searchParams.message}
+            message={search.message}
             returnTo={returnTo}
             submitLabel="Add customer"
           />

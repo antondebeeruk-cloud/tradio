@@ -19,7 +19,7 @@ export async function login(formData: FormData) {
     ? redirectedFrom
     : "/dashboard";
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth
     .signInWithPassword({
       email,
@@ -28,7 +28,9 @@ export async function login(formData: FormData) {
     .catch((error: Error) => ({ error }));
 
   if (error) {
-    redirect(`/login?message=${encodeURIComponent(error.message)}`);
+    redirect(
+      `/login?message=${encodeURIComponent(error.message)}&redirectedFrom=${encodeURIComponent(safeRedirect)}`,
+    );
   }
 
   revalidatePath("/", "layout");
@@ -40,9 +42,9 @@ export async function signup(formData: FormData) {
   const password = getString(formData, "password");
   const fullName = getString(formData, "fullName");
   const businessName = getString(formData, "businessName");
-  const origin = headers().get("origin");
+  const origin = (await headers()).get("origin");
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.auth
     .signUp({
       email,
@@ -89,7 +91,7 @@ export async function signup(formData: FormData) {
 }
 
 export async function logout() {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/login");

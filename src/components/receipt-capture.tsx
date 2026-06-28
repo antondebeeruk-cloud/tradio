@@ -48,6 +48,8 @@ export function ReceiptCapture() {
       {fileName ? (
         <div className="mt-4 grid gap-4 lg:grid-cols-[160px_1fr]">
           {previewUrl ? (
+            // Blob previews exist only in this browser session and cannot use Next Image.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               alt="Receipt preview"
               className="h-40 w-full rounded-lg border border-field object-cover"

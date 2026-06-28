@@ -6,19 +6,20 @@ import { CustomerForm } from "@/components/customer-form";
 import { createClient } from "@/lib/supabase/server";
 
 type EditCustomerPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     message?: string;
-  };
+  }>;
 };
 
 export default async function EditCustomerPage({
   params,
   searchParams,
 }: EditCustomerPageProps) {
-  const supabase = createClient();
+  const [route, search] = await Promise.all([params, searchParams]);
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -34,7 +35,7 @@ export default async function EditCustomerPage({
       .select(
         "id, name, email, phone, address_line_1, address_line_2, town, postcode, notes",
       )
-      .eq("id", params.id)
+      .eq("id", route.id)
       .eq("user_id", user.id)
       .single(),
   ]);
@@ -74,7 +75,7 @@ export default async function EditCustomerPage({
           <CustomerForm
             action={updateCustomer}
             customer={customer}
-            message={searchParams.message}
+            message={search.message}
             submitLabel="Save changes"
           />
         </section>

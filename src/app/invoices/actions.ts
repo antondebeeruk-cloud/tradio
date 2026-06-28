@@ -19,7 +19,7 @@ function isInvoiceStatus(value: string): value is InvoiceStatus {
 }
 
 async function requireUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -21,6 +21,25 @@ function clearSupabaseCookies(request: NextRequest, response: NextResponse) {
   return response;
 }
 
+function hasActivePlan(profile: {
+  plan?: string | null;
+  subscription_status?: string | null;
+  trial_expires_at?: string | null;
+} | null) {
+  if (!profile?.plan || profile.subscription_status !== "active") {
+    return false;
+  }
+
+  if (profile.plan === "trial") {
+    return Boolean(
+      profile.trial_expires_at &&
+        new Date(profile.trial_expires_at).getTime() > Date.now(),
+    );
+  }
+
+  return ["lite", "pro", "elite"].includes(profile.plan);
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isProtectedRoute =
@@ -42,6 +61,7 @@ export async function middleware(request: NextRequest) {
   });
   const hasSession = hasSupabaseSessionCookie(request);
   let hasValidSession = false;
+  let hasPlanAccess = false;
 
   if (hasSession) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -82,6 +102,15 @@ export async function middleware(request: NextRequest) {
 
       hasValidSession = Boolean(data.user && !error);
 
+      if (data.user && !error) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("plan, subscription_status, trial_expires_at")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        hasPlanAccess = hasActivePlan(profile);
+      }
+
       if (error) {
         clearSupabaseCookies(request, response);
       }
@@ -94,14 +123,26 @@ export async function middleware(request: NextRequest) {
     redirectUrl.searchParams.set("redirectedFrom", pathname);
     redirectUrl.searchParams.set(
       "message",
-      "Your session expired. Please log in again.",
+      hasSession
+        ? "Your session expired. Please log in again."
+        : "Please log in to continue.",
     );
     return clearSupabaseCookies(request, NextResponse.redirect(redirectUrl));
   }
 
-  if (isAuthRoute && hasValidSession) {
+  if (isProtectedRoute && hasValidSession && !hasPlanAccess) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/pricing";
+    redirectUrl.searchParams.set(
+      "message",
+      "Choose an active package to continue using Tradio.",
+    );
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (isAuthRoute && hasValidSession) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = hasPlanAccess ? "/dashboard" : "/pricing";
     redirectUrl.search = "";
     return NextResponse.redirect(redirectUrl);
   }

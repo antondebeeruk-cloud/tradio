@@ -6,9 +6,9 @@ import { hasProAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 type QuotePdfPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 type DocumentCustomer = {
@@ -28,7 +28,8 @@ function singleCustomer(
 }
 
 export default async function QuotePdfPage({ params }: QuotePdfPageProps) {
-  const supabase = createClient();
+  const route = await params;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -52,7 +53,7 @@ export default async function QuotePdfPage({ params }: QuotePdfPageProps) {
     .select(
       "id, quote_number, status, issue_date, expiry_date, subtotal, vat_rate, vat_amount, total, notes, customers(name, email, phone, address_line_1, address_line_2, town, postcode)",
     )
-    .eq("id", params.id)
+    .eq("id", route.id)
     .eq("user_id", user.id)
     .single();
 

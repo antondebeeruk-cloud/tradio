@@ -9,19 +9,20 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCustomerPortalDocument } from "@/lib/customer-portal-document";
 
 type PortalPageProps = {
-  params: {
+  params: Promise<{
     token: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     message?: string;
-  };
+  }>;
 };
 
 export default async function CustomerPortalPage({
   params,
   searchParams,
 }: PortalPageProps) {
-  const portalDocument = await getCustomerPortalDocument(params.token);
+  const [route, search] = await Promise.all([params, searchParams]);
+  const portalDocument = await getCustomerPortalDocument(route.token);
 
   if (!portalDocument) {
     notFound();
@@ -42,7 +43,7 @@ export default async function CustomerPortalPage({
         <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <TradioLogo />
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Link className="btn-secondary" href={`/portal/${params.token}/pdf`}>
+            <Link className="btn-secondary" href={`/portal/${route.token}/pdf`}>
               <Download aria-hidden="true" size={16} />
               Download PDF
             </Link>
@@ -52,8 +53,8 @@ export default async function CustomerPortalPage({
       </header>
 
       <section className="mx-auto max-w-5xl px-5 py-6">
-        {searchParams.message ? (
-          <p className="notice mb-5">{searchParams.message}</p>
+        {search.message ? (
+          <p className="notice mb-5">{search.message}</p>
         ) : null}
 
         {isQuote ? (
@@ -71,7 +72,7 @@ export default async function CustomerPortalPage({
               </div>
               {canAcceptQuote ? (
                 <form action={acceptPortalQuote}>
-                  <input name="token" type="hidden" value={params.token} />
+                  <input name="token" type="hidden" value={route.token} />
                   <button className="btn-accent">
                     <Check aria-hidden="true" size={17} />
                     Accept quote

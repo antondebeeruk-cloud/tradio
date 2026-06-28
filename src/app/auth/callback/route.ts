@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       : "/dashboard";
 
   if (code) {
-    const supabase = createClient();
+  const supabase = await createClient();
     await supabase.auth.exchangeCodeForSession(code);
 
     const {

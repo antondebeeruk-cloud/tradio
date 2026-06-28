@@ -13,13 +13,14 @@ export const metadata: Metadata = {
 };
 
 type LoginPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     message?: string;
     redirectedFrom?: string;
-  };
+  }>;
 };
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const search = await searchParams;
   return (
     <main className="flex min-h-screen items-center justify-center bg-mist px-5 py-10 text-ink">
       <section className="surface-pad w-full max-w-md">
@@ -34,7 +35,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
           <input
             name="redirectedFrom"
             type="hidden"
-            value={searchParams.redirectedFrom ?? "/dashboard"}
+            value={search.redirectedFrom ?? "/dashboard"}
           />
 
           <div>
@@ -64,9 +65,9 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
             />
           </div>
 
-          {searchParams.message ? (
+          {search.message ? (
             <p className="notice">
-              {searchParams.message}
+              {search.message}
             </p>
           ) : null}
 

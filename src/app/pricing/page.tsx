@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 type PricingPageProps = {
-  searchParams: { message?: string };
+  searchParams: Promise<{ message?: string }>;
 };
 
 const packages = [
@@ -83,7 +83,8 @@ const packages = [
 ];
 
 export default async function PricingPage({ searchParams }: PricingPageProps) {
-  const supabase = createClient();
+  const search = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -98,6 +99,7 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
     .eq("id", user.id)
     .maybeSingle();
   const hasSubscription = hasActiveSubscription(profile);
+  const trialUsed = profile?.plan === "trial";
 
   return (
     <main className="min-h-screen bg-mist px-5 py-8 text-ink sm:px-8">
@@ -114,9 +116,9 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
           </p>
         </div>
 
-        {searchParams.message ? (
+        {search.message ? (
           <p className="notice mx-auto mt-6 max-w-2xl text-center">
-            {searchParams.message}
+            {search.message}
           </p>
         ) : null}
         {hasSubscription ? (
@@ -176,9 +178,11 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
                   <form action={startFreeTrial} className="mt-6">
                     <button
                       className="btn-primary w-full"
-                      disabled={hasSubscription}
+                      disabled={hasSubscription || trialUsed}
                     >
-                      {hasSubscription ? "Trial unavailable" : plan.button}
+                      {hasSubscription || trialUsed
+                        ? "Trial unavailable"
+                        : plan.button}
                     </button>
                   </form>
                 ) : (

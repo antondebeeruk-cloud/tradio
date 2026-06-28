@@ -40,7 +40,7 @@ function toNonNegativeNumber(value: FormDataEntryValue | null, fallback: number)
 }
 
 async function requireUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

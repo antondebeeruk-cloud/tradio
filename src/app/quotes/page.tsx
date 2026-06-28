@@ -21,9 +21,9 @@ import { currency } from "@/lib/documents";
 import { createClient } from "@/lib/supabase/server";
 
 type QuotesPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     message?: string;
-  };
+  }>;
 };
 
 const statusOptions = [
@@ -45,7 +45,8 @@ function singleRelation<T>(relation: T | T[] | null) {
 }
 
 export default async function QuotesPage({ searchParams }: QuotesPageProps) {
-  const supabase = createClient();
+  const search = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -110,9 +111,9 @@ export default async function QuotesPage({ searchParams }: QuotesPageProps) {
       </header>
 
       <div className="app-page-body">
-        {searchParams.message ? (
+        {search.message ? (
           <p className="notice mb-5">
-            {searchParams.message}
+            {search.message}
           </p>
         ) : null}
         {portalError ? <p className="notice mb-5">{portalError}</p> : null}

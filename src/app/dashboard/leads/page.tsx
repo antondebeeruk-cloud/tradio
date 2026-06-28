@@ -24,9 +24,9 @@ import { htmlToText } from "@/lib/leads/parser";
 import { createClient } from "@/lib/supabase/server";
 
 type LeadsPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     message?: string;
-  };
+  }>;
 };
 
 const leadStatusOptions = ["new", "contacted", "quoted", "won", "lost", "spam"];
@@ -41,7 +41,7 @@ const leadStatusClasses: Record<string, string> = {
 };
 
 async function ensureLeadEmailForUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -88,6 +88,7 @@ async function ensureLeadEmailForUser() {
 }
 
 export default async function LeadsPage({ searchParams }: LeadsPageProps) {
+  const search = await searchParams;
   const { profile, supabase, user } = await ensureLeadEmailForUser();
   const { data: leads, error } = await supabase
     .from("leads")
@@ -111,8 +112,8 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       </header>
 
       <div className="app-page-body">
-        {searchParams.message ? (
-          <p className="notice mb-5">{searchParams.message}</p>
+        {search.message ? (
+          <p className="notice mb-5">{search.message}</p>
         ) : null}
 
         <section className="surface-pad">

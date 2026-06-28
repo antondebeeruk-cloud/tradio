@@ -60,7 +60,7 @@ const features = [
   },
   {
     description:
-      "Ask Tradio Support AI for quick help with setup, quotes, invoices, leads, subscriptions, and common app questions.",
+      "Elite users can ask Tradio Support AI for quick help with setup, quotes, invoices, leads, subscriptions, and common app questions.",
     icon: Bot,
     title: "AI support",
   },
@@ -192,9 +192,9 @@ export default function Home() {
           T
         </div>
 
-        <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
-          <Link href="/">
-            <TradioLogo />
+        <header className="mx-auto flex max-w-7xl items-center justify-between bg-[#061d34] px-5 py-5 sm:bg-transparent sm:px-8">
+          <Link className="min-w-0" href="/">
+            <TradioLogo className="[&>img]:!h-10 [&>img]:!w-10 [&>span]:!text-[1.85rem] sm:[&>img]:!h-12 sm:[&>img]:!w-12 sm:[&>span]:!text-[2.65rem]" />
           </Link>
           <nav className="flex items-center gap-2">
             <Link

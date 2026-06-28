@@ -92,12 +92,13 @@ export function LandingAiHelper() {
         </div>
       ) : (
         <button
-          className="ml-auto flex items-center gap-3 rounded-lg bg-copper px-4 py-3 text-sm font-black text-white shadow-[0_18px_45px_rgba(0,0,0,0.26)] transition hover:bg-[#e94f00]"
+          aria-label="Ask Tradio help"
+          className="ml-auto flex size-12 items-center justify-center gap-3 rounded-lg bg-copper p-0 text-sm font-black text-white shadow-[0_18px_45px_rgba(0,0,0,0.26)] transition hover:bg-[#e94f00] sm:size-auto sm:px-4 sm:py-3"
           onClick={() => setIsOpen(true)}
           type="button"
         >
           <Bot aria-hidden="true" size={19} />
-          Ask Tradio help
+          <span className="hidden sm:inline">Ask Tradio help</span>
         </button>
       )}
     </div>

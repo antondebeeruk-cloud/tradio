@@ -7,14 +7,15 @@ import { QuoteForm } from "@/components/quote-form";
 import { createClient } from "@/lib/supabase/server";
 
 type NewQuotePageProps = {
-  searchParams: {
+  searchParams: Promise<{
     customerId?: string;
     message?: string;
-  };
+  }>;
 };
 
 export default async function NewQuotePage({ searchParams }: NewQuotePageProps) {
-  const supabase = createClient();
+  const search = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -70,10 +71,10 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
             message={
               savedItemsTableMissing
                 ? "Smart quote builder needs the latest Supabase SQL. Run supabase/saved-quote-items.sql to enable saved items."
-                : searchParams.message
+                : search.message
             }
             savedItems={savedItems}
-            selectedCustomerId={searchParams.customerId}
+            selectedCustomerId={search.customerId}
           />
         ) : (
           <section className="empty-state">

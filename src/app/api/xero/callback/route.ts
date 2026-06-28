@@ -25,7 +25,7 @@ function requestMeta(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -40,9 +40,10 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
   const state = searchParams.get("state");
-  const savedState = cookies().get(xeroStateCookieName)?.value;
+  const cookieStore = await cookies();
+  const savedState = cookieStore.get(xeroStateCookieName)?.value;
 
-  cookies().delete(xeroStateCookieName);
+  cookieStore.delete(xeroStateCookieName);
 
   if (error) {
     await logXeroAuditEvent({

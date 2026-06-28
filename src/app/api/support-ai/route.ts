@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getBuiltInSupportAnswer } from "@/lib/support-knowledge";
 import { createClient } from "@/lib/supabase/server";
+import { hasEliteAccess } from "@/lib/subscription";
 
 export const runtime = "nodejs";
 
@@ -23,13 +24,26 @@ function isSupportMessage(value: unknown): value is SupportMessage {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: "Login required." }, { status: 401 });
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan, subscription_status, trial_expires_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!hasEliteAccess(profile)) {
+    return NextResponse.json(
+      { error: "Support AI is available on Tradio Elite." },
+      { status: 403 },
+    );
   }
 
   const body = await request.json().catch(() => null);

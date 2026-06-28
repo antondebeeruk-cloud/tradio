@@ -15,7 +15,7 @@ export function Footer() {
           <Link className="font-semibold text-forest hover:underline" href="/cookie-policy">
             Cookie Policy
           </Link>
-          <a className="font-semibold text-forest hover:underline" href="mailto:hello@tradio.app">
+          <a className="font-semibold text-forest hover:underline" href="mailto:hello@tradio.uk">
             Contact
           </a>
         </nav>

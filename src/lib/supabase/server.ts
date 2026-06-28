@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export function createClient() {
+export async function createClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Missing Supabase environment variables.");
   }
@@ -18,7 +18,7 @@ export function createClient() {
     throw new Error("Supabase environment variables still contain example values.");
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {

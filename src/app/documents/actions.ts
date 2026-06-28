@@ -24,7 +24,7 @@ function singleCustomer(
 }
 
 async function requireUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -49,7 +49,7 @@ async function requireUser() {
 }
 
 async function getBusinessProfile(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
 ) {
   const { data } = await supabase

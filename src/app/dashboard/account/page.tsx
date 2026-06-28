@@ -11,9 +11,9 @@ import { formatDate } from "@/lib/documents";
 import { createClient } from "@/lib/supabase/server";
 
 type AccountPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     message?: string;
-  };
+  }>;
 };
 
 function planLabel(plan?: string | null) {
@@ -37,7 +37,8 @@ function planLabel(plan?: string | null) {
 }
 
 export default async function AccountPage({ searchParams }: AccountPageProps) {
-  const supabase = createClient();
+  const search = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -103,8 +104,8 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
       </header>
 
       <div className="app-page-body">
-        {searchParams.message ? (
-          <p className="notice mb-5">{searchParams.message}</p>
+        {search.message ? (
+          <p className="notice mb-5">{search.message}</p>
         ) : null}
 
         <section className="surface-pad">

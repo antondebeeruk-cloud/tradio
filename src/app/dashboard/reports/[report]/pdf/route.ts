@@ -5,9 +5,9 @@ import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 type ReportRouteProps = {
-  params: {
+  params: Promise<{
     report: string;
-  };
+  }>;
 };
 
 type CustomerRelation = { name?: string | null };
@@ -185,7 +185,7 @@ function createProfitRows(
 }
 
 async function profitReport(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   businessName: string,
 ) {
@@ -265,7 +265,7 @@ async function profitReport(
 }
 
 async function monthlyRevenueReport(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   businessName: string,
 ) {
@@ -330,7 +330,7 @@ async function monthlyRevenueReport(
 }
 
 async function loadCompletedJobFigures(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
 ) {
   const [jobsResult, costsResult] = await Promise.all([
@@ -358,7 +358,7 @@ async function loadCompletedJobFigures(
 }
 
 async function jobProfitabilityReport(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   businessName: string,
 ) {
@@ -404,7 +404,7 @@ async function jobProfitabilityReport(
 }
 
 async function bestJobTypesReport(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   businessName: string,
 ) {
@@ -473,7 +473,7 @@ async function bestJobTypesReport(
 }
 
 async function outstandingReport(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   businessName: string,
 ) {
@@ -533,7 +533,7 @@ async function outstandingReport(
 }
 
 async function materialSpendReport(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   businessName: string,
 ) {
@@ -633,7 +633,7 @@ async function materialSpendReport(
 }
 
 async function vatSummaryReport(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   businessName: string,
 ) {
@@ -710,7 +710,7 @@ async function vatSummaryReport(
 }
 
 async function timeVsMoneyReport(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   businessName: string,
 ) {
@@ -753,7 +753,7 @@ async function timeVsMoneyReport(
 }
 
 async function quoteSuccessReport(
-  supabase: ReturnType<typeof createClient>,
+  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   businessName: string,
 ) {
@@ -806,7 +806,8 @@ async function quoteSuccessReport(
 }
 
 export async function GET(request: Request, { params }: ReportRouteProps) {
-  const supabase = createClient();
+  const route = await params;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -833,31 +834,31 @@ export async function GET(request: Request, { params }: ReportRouteProps) {
     let pdf: Buffer;
     let filename: string;
 
-    if (params.report === "profit") {
+    if (route.report === "profit") {
       pdf = await profitReport(supabase, user.id, businessName);
       filename = "tradio-profit-report.pdf";
-    } else if (params.report === "monthly-revenue") {
+    } else if (route.report === "monthly-revenue") {
       pdf = await monthlyRevenueReport(supabase, user.id, businessName);
       filename = "tradio-monthly-revenue.pdf";
-    } else if (params.report === "job-profitability") {
+    } else if (route.report === "job-profitability") {
       pdf = await jobProfitabilityReport(supabase, user.id, businessName);
       filename = "tradio-job-profitability.pdf";
-    } else if (params.report === "best-job-types") {
+    } else if (route.report === "best-job-types") {
       pdf = await bestJobTypesReport(supabase, user.id, businessName);
       filename = "tradio-best-job-types.pdf";
-    } else if (params.report === "material-spend") {
+    } else if (route.report === "material-spend") {
       pdf = await materialSpendReport(supabase, user.id, businessName);
       filename = "tradio-material-spend.pdf";
-    } else if (params.report === "vat-summary") {
+    } else if (route.report === "vat-summary") {
       pdf = await vatSummaryReport(supabase, user.id, businessName);
       filename = "tradio-vat-summary.pdf";
-    } else if (params.report === "time-vs-money") {
+    } else if (route.report === "time-vs-money") {
       pdf = await timeVsMoneyReport(supabase, user.id, businessName);
       filename = "tradio-time-vs-money.pdf";
-    } else if (params.report === "outstanding-payments") {
+    } else if (route.report === "outstanding-payments") {
       pdf = await outstandingReport(supabase, user.id, businessName);
       filename = "tradio-outstanding-payments.pdf";
-    } else if (params.report === "quote-success") {
+    } else if (route.report === "quote-success") {
       pdf = await quoteSuccessReport(supabase, user.id, businessName);
       filename = "tradio-quote-success-report.pdf";
     } else {

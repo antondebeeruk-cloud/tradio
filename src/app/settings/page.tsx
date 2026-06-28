@@ -12,9 +12,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getXeroConnectionStatus } from "@/lib/xero";
 
 type SettingsPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     message?: string;
-  };
+  }>;
 };
 
 const fieldClass =
@@ -33,7 +33,8 @@ function settingsMessage(message?: string) {
 }
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
-  const supabase = createClient();
+  const search = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -76,7 +77,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   const activeXeroConnection =
     xeroConnection && !("error" in xeroConnection) ? xeroConnection : null;
 
-  const pageMessage = settingsMessage(error?.message ?? searchParams.message);
+  const pageMessage = settingsMessage(error?.message ?? search.message);
 
   return (
     <AppShell active="settings" plan={profile?.plan}>

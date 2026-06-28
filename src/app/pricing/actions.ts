@@ -15,7 +15,7 @@ function getString(formData: FormData, key: string) {
 }
 
 async function requireUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -27,8 +27,8 @@ async function requireUser() {
   return { supabase, user };
 }
 
-function requestOrigin() {
-  const headerStore = headers();
+async function requestOrigin() {
+  const headerStore = await headers();
   return (
     headerStore.get("origin") ??
     process.env.NEXT_PUBLIC_APP_URL ??
@@ -44,8 +44,11 @@ export async function startFreeTrial() {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (hasActiveSubscription(existingProfile)) {
-    redirect("/pricing?message=An active account cannot start a new trial.");
+  if (
+    hasActiveSubscription(existingProfile) ||
+    existingProfile?.plan === "trial"
+  ) {
+    redirect("/pricing?message=The free trial has already been used on this account.");
   }
 
   const { error } = await supabase.from("profiles").upsert({
@@ -82,7 +85,7 @@ export async function startPayPalCheckout(formData: FormData) {
   }
 
   const { supabase, user } = await requireUser();
-  const origin = requestOrigin();
+  const origin = await requestOrigin();
   let approvalUrl = "";
 
   try {

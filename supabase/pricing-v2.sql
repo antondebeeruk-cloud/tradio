@@ -26,3 +26,5 @@ alter table public.profiles
 alter table public.profiles
   add constraint profiles_plan_check
   check (plan is null or plan in ('trial', 'lite', 'pro', 'elite'));
+
+notify pgrst, 'reload schema';

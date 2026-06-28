@@ -36,7 +36,7 @@ export async function ensureCustomerPortalLink({
   documentType,
   userId,
 }: EnsurePortalLinkInput): Promise<PortalLinkResult> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const documentColumn = documentType === "quote" ? "quote_id" : "invoice_id";
 
   const { data: existingLink, error: existingError } = await supabase

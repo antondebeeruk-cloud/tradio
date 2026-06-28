@@ -16,9 +16,9 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 type ReceiptsPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     message?: string;
-  };
+  }>;
 };
 
 type CustomerRelation = { name?: string | null };
@@ -89,7 +89,8 @@ function canScanAttachment(attachmentUrl?: string | null) {
 }
 
 export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) {
-  const supabase = createClient();
+  const search = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -163,8 +164,8 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
       </header>
 
       <div className="app-page-body">
-        {searchParams.message ? (
-          <p className="notice mb-5">{searchParams.message}</p>
+        {search.message ? (
+          <p className="notice mb-5">{search.message}</p>
         ) : null}
         {receiptsTableMissing ? (
           <p className="notice mb-5">

@@ -6,13 +6,14 @@ import { AppShell } from "@/components/app-shell";
 import { createClient } from "@/lib/supabase/server";
 
 type CustomersPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     message?: string;
-  };
+  }>;
 };
 
 export default async function CustomersPage({ searchParams }: CustomersPageProps) {
-  const supabase = createClient();
+  const search = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -61,9 +62,9 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
       </header>
 
       <div className="app-page-body">
-        {searchParams.message ? (
+        {search.message ? (
           <p className="notice mb-5">
-            {searchParams.message}
+            {search.message}
           </p>
         ) : null}
 

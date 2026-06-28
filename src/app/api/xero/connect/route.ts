@@ -18,7 +18,7 @@ function requestMeta(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const state = randomUUID();
-    cookies().set(xeroStateCookieName, state, {
+    const cookieStore = await cookies();
+    cookieStore.set(xeroStateCookieName, state, {
       httpOnly: true,
       maxAge: 10 * 60,
       path: "/",

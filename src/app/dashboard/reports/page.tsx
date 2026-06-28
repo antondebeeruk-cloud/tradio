@@ -179,7 +179,7 @@ function relationName(relation: NamedRelation | NamedRelation[] | null | undefin
 }
 
 export default async function ReportsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

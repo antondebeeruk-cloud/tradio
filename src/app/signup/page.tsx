@@ -13,12 +13,13 @@ export const metadata: Metadata = {
 };
 
 type SignupPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     message?: string;
-  };
+  }>;
 };
 
-export default function SignupPage({ searchParams }: SignupPageProps) {
+export default async function SignupPage({ searchParams }: SignupPageProps) {
+  const search = await searchParams;
   return (
     <main className="flex min-h-screen items-center justify-center bg-mist px-5 py-10 text-ink">
       <section className="surface-pad w-full max-w-md">
@@ -81,9 +82,9 @@ export default function SignupPage({ searchParams }: SignupPageProps) {
             />
           </div>
 
-          {searchParams.message ? (
+          {search.message ? (
             <p className="notice">
-              {searchParams.message}
+              {search.message}
             </p>
           ) : null}
 

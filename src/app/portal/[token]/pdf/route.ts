@@ -3,13 +3,14 @@ import { createDocumentPdf } from "@/lib/pdf";
 import { getCustomerPortalDocument } from "@/lib/customer-portal-document";
 
 type PortalPdfRouteProps = {
-  params: {
+  params: Promise<{
     token: string;
-  };
+  }>;
 };
 
 export async function GET(_request: Request, { params }: PortalPdfRouteProps) {
-  const portalDocument = await getCustomerPortalDocument(params.token);
+  const route = await params;
+  const portalDocument = await getCustomerPortalDocument(route.token);
 
   if (!portalDocument) {
     return NextResponse.json({ error: "Document not found" }, { status: 404 });

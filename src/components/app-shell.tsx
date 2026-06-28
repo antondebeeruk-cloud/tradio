@@ -176,7 +176,7 @@ function NavLink({
 }
 
 export async function AppShell({ active, children, plan }: AppShellProps) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
