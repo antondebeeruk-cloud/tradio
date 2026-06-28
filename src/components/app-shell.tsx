@@ -1,6 +1,7 @@
 import {
   FileText,
   LayoutDashboard,
+  Lock,
   LogOut,
   MailPlus,
   BarChart3,
@@ -14,6 +15,7 @@ import Link from "next/link";
 import { logout } from "@/app/auth/actions";
 import { AccountMenu } from "@/components/account-menu";
 import { TradioLogo } from "@/components/tradio-logo";
+import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 const navItems = [
@@ -23,7 +25,12 @@ const navItems = [
   { label: "Quotes", href: "/quotes", icon: FileText },
   { label: "Invoices", href: "/invoices", icon: ReceiptText },
   { label: "Receipts", href: "/dashboard/receipts", icon: ReceiptText },
-  { label: "Reports", href: "/dashboard/reports", icon: BarChart3 },
+  {
+    label: "Reports",
+    href: "/dashboard/reports",
+    icon: BarChart3,
+    eliteOnly: true,
+  },
   { label: "Jobs", href: "/dashboard/jobs", icon: BriefcaseBusiness },
   { label: "Support", href: "/dashboard/support", icon: MessageCircleQuestion },
   { label: "Settings", href: "/settings", icon: Settings },
@@ -88,6 +95,10 @@ function planLabelFor(plan?: string | null) {
     return "Lite";
   }
 
+  if (plan === "pro") {
+    return "Pro";
+  }
+
   if (plan === "elite") {
     return "Elite";
   }
@@ -97,14 +108,17 @@ function planLabelFor(plan?: string | null) {
 
 function NavLink({
   active,
+  canUseElite,
   item,
   mobile = false,
 }: {
   active: AppShellProps["active"];
+  canUseElite: boolean;
   item: (typeof navItems)[number];
   mobile?: boolean;
 }) {
   const isActive = activeByHref[item.href] === active;
+  const isLocked = "eliteOnly" in item && item.eliteOnly && !canUseElite;
   const Icon = item.icon;
 
   if (mobile) {
@@ -117,7 +131,16 @@ function NavLink({
         }`}
         href={item.href}
       >
-        <Icon aria-hidden="true" size={19} />
+        <span className="relative">
+          <Icon aria-hidden="true" size={19} />
+          {isLocked ? (
+            <Lock
+              aria-hidden="true"
+              className="absolute -right-2 -top-1 text-copper"
+              size={11}
+            />
+          ) : null}
+        </span>
         <span className="max-w-full truncate">{item.label}</span>
       </Link>
     );
@@ -141,6 +164,12 @@ function NavLink({
       </span>
       <span className="flex min-w-0 flex-1 items-center justify-center gap-2 lg:justify-start">
         {item.label}
+        {isLocked ? (
+          <span className="inline-flex items-center gap-1 rounded-lg bg-copper/20 px-2 py-0.5 text-[11px] font-bold text-white">
+            <Lock aria-hidden="true" size={11} />
+            Elite
+          </span>
+        ) : null}
       </span>
     </Link>
   );
@@ -154,12 +183,13 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
   const { data: profile } = user
     ? await supabase
         .from("profiles")
-        .select("full_name, plan")
+        .select("full_name, plan, subscription_status, trial_expires_at")
         .eq("id", user.id)
         .maybeSingle()
     : { data: null };
   const email = user?.email ?? "";
   const displayName = profile?.full_name ?? email;
+  const canUseElite = hasEliteAccess(profile);
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(255,90,0,0.08),transparent_26rem),linear-gradient(135deg,#edf4fa,#f7fbff)] text-ink">
@@ -178,6 +208,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
             {navItems.map((item) => (
               <NavLink
                 active={active}
+                canUseElite={canUseElite}
                 item={item}
                 key={item.label}
               />
@@ -232,6 +263,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
                 {navItems.map((item) => (
                   <NavLink
                     active={active}
+                    canUseElite={canUseElite}
                     item={item}
                     key={item.label}
                     mobile

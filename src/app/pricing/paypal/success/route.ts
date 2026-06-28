@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getPayPalSubscription } from "@/lib/paypal";
+import { cancelPayPalSubscription, getPayPalSubscription } from "@/lib/paypal";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
@@ -14,13 +14,16 @@ export async function GET(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan, paypal_subscription_id")
+    .select(
+      "paypal_subscription_id, pending_paypal_subscription_id, pending_plan, pending_billing_interval",
+    )
     .eq("id", user.id)
     .maybeSingle();
 
   if (
-    !profile?.paypal_subscription_id ||
-    (profile.plan !== "lite" && profile.plan !== "elite")
+    !profile?.pending_paypal_subscription_id ||
+    !["lite", "pro", "elite"].includes(profile.pending_plan ?? "") ||
+    !["monthly", "annual"].includes(profile.pending_billing_interval ?? "")
   ) {
     return NextResponse.redirect(
       new URL("/pricing?message=No pending PayPal subscription was found.", request.url),
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const subscription = await getPayPalSubscription(
-      profile.paypal_subscription_id,
+      profile.pending_paypal_subscription_id,
     );
 
     if (subscription.status !== "ACTIVE") {
@@ -43,14 +46,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await supabase.from("profiles").upsert({
+    const { error: updateError } = await supabase.from("profiles").upsert({
       id: user.id,
       paypal_subscription_id: subscription.id,
-      plan: profile.plan,
+      plan: profile.pending_plan,
+      billing_interval: profile.pending_billing_interval,
       subscription_status: "active",
       trial_expires_at: null,
+      pending_paypal_subscription_id: null,
+      pending_plan: null,
+      pending_billing_interval: null,
       updated_at: new Date().toISOString(),
     });
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
+    if (
+      profile.paypal_subscription_id &&
+      profile.paypal_subscription_id !== subscription.id
+    ) {
+      await cancelPayPalSubscription(
+        profile.paypal_subscription_id,
+        "Replaced by a new Tradio subscription.",
+      );
+    }
 
     return NextResponse.redirect(new URL("/dashboard", request.url));
   } catch (error) {

@@ -3,10 +3,11 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createPayPalSubscription, paypalPlanId } from "@/lib/paypal";
-import { trialExpiryDate } from "@/lib/subscription";
+import { hasActiveSubscription, trialExpiryDate } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
-type PaidPlan = "lite" | "elite";
+type PaidPlan = "lite" | "pro" | "elite";
+type BillingInterval = "monthly" | "annual";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -37,11 +38,25 @@ function requestOrigin() {
 
 export async function startFreeTrial() {
   const { supabase, user } = await requireUser();
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("plan, subscription_status, trial_expires_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (hasActiveSubscription(existingProfile)) {
+    redirect("/pricing?message=An active account cannot start a new trial.");
+  }
+
   const { error } = await supabase.from("profiles").upsert({
     id: user.id,
     plan: "trial",
+    billing_interval: null,
     subscription_status: "active",
     trial_expires_at: trialExpiryDate().toISOString(),
+    pending_paypal_subscription_id: null,
+    pending_plan: null,
+    pending_billing_interval: null,
     updated_at: new Date().toISOString(),
   });
 
@@ -54,9 +69,16 @@ export async function startFreeTrial() {
 
 export async function startPayPalCheckout(formData: FormData) {
   const plan = getString(formData, "plan") as PaidPlan;
+  const billingInterval = getString(
+    formData,
+    "billing_interval",
+  ) as BillingInterval;
 
-  if (plan !== "lite" && plan !== "elite") {
+  if (!["lite", "pro", "elite"].includes(plan)) {
     redirect("/pricing?message=Choose a valid plan.");
+  }
+  if (!["monthly", "annual"].includes(billingInterval)) {
+    redirect("/pricing?message=Choose monthly or annual billing.");
   }
 
   const { supabase, user } = await requireUser();
@@ -66,17 +88,16 @@ export async function startPayPalCheckout(formData: FormData) {
   try {
     const subscription = await createPayPalSubscription({
       cancelUrl: `${origin}/pricing/paypal/cancel`,
-      customId: `${user.id}:${plan}`,
-      planId: paypalPlanId(plan),
+      customId: `${user.id}:${plan}:${billingInterval}`,
+      planId: paypalPlanId(plan, billingInterval),
       returnUrl: `${origin}/pricing/paypal/success`,
     });
 
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,
-      paypal_subscription_id: subscription.id,
-      plan,
-      subscription_status: "pending",
-      trial_expires_at: null,
+      pending_paypal_subscription_id: subscription.id,
+      pending_plan: plan,
+      pending_billing_interval: billingInterval,
       updated_at: new Date().toISOString(),
     });
 

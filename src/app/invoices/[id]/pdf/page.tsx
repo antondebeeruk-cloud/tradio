@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { emailInvoiceWithPdf } from "@/app/documents/actions";
 import { DocumentTemplate } from "@/components/document-template";
 import { PrintActions } from "@/components/print-actions";
+import { hasProAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 type InvoicePdfPageProps = {
@@ -34,6 +35,16 @@ export default async function InvoicePdfPage({ params }: InvoicePdfPageProps) {
 
   if (!user) {
     redirect("/login");
+  }
+
+  const { data: accessProfile } = await supabase
+    .from("profiles")
+    .select("plan, subscription_status, trial_expires_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!hasProAccess(accessProfile)) {
+    redirect("/pricing?message=PDF exports are available on Tradio Pro and Elite.");
   }
 
   const { data: invoice, error } = await supabase

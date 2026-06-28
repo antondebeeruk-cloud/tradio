@@ -155,7 +155,7 @@ export default async function ReceiptsPage({ searchParams }: ReceiptsPageProps) 
     <AppShell active="receipts" plan={profile?.plan}>
       <header className="app-page-header">
         <div>
-          <p className="eyebrow">Elite receipts</p>
+          <p className="eyebrow">Expenses and receipts</p>
           <h1 className="page-title">
             Capture purchases and allocate them to jobs.
           </h1>

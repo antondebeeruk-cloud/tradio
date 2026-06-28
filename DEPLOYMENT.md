@@ -32,8 +32,12 @@ EMAIL_FROM=Tradio <noreply@yourdomain.com>
 PAYPAL_ENVIRONMENT=live
 PAYPAL_CLIENT_ID=your PayPal client ID
 PAYPAL_CLIENT_SECRET=your PayPal client secret
-PAYPAL_LITE_PLAN_ID=your PayPal Lite subscription plan ID
-PAYPAL_ELITE_PLAN_ID=your PayPal Elite subscription plan ID
+PAYPAL_LITE_MONTHLY_PLAN_ID=your PayPal Lite monthly plan ID
+PAYPAL_LITE_ANNUAL_PLAN_ID=your PayPal Lite annual plan ID
+PAYPAL_PRO_MONTHLY_PLAN_ID=your PayPal Pro monthly plan ID
+PAYPAL_PRO_ANNUAL_PLAN_ID=your PayPal Pro annual plan ID
+PAYPAL_ELITE_MONTHLY_PLAN_ID=your PayPal Elite monthly plan ID
+PAYPAL_ELITE_ANNUAL_PLAN_ID=your PayPal Elite annual plan ID
 ```
 
 `RESEND_API_KEY` and `EMAIL_FROM` are needed for emailing quote and invoice PDFs.

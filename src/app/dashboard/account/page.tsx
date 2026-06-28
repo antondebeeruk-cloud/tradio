@@ -25,6 +25,10 @@ function planLabel(plan?: string | null) {
     return "Lite";
   }
 
+  if (plan === "pro") {
+    return "Pro";
+  }
+
   if (plan === "elite") {
     return "Elite";
   }
@@ -45,7 +49,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
   const { data: profile, error } = await supabase
     .from("profiles")
     .select(
-      "full_name, business_name, plan, subscription_status, trial_expires_at, paypal_subscription_id, cancelled_at, data_deletion_requested_at",
+      "full_name, business_name, plan, billing_interval, subscription_status, trial_expires_at, paypal_subscription_id, cancelled_at, data_deletion_requested_at",
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -57,6 +61,12 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
   const details = [
     { label: "Email", value: user.email ?? "Not available" },
     { label: "Current plan", value: planLabel(profile?.plan) },
+    {
+      label: "Billing",
+      value: profile?.billing_interval
+        ? `${profile.billing_interval[0].toUpperCase()}${profile.billing_interval.slice(1)}`
+        : "Not applicable",
+    },
     {
       label: "Subscription status",
       value: profile?.subscription_status ?? "Not active",

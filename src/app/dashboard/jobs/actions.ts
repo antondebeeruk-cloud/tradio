@@ -7,6 +7,7 @@ import {
   uploadReceiptAttachment,
 } from "@/lib/receipt-attachments";
 import { queueReceiptScan } from "@/lib/receipt-ocr";
+import { hasProAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 const jobStatuses = [
@@ -245,6 +246,20 @@ export async function createJobCost(formData: FormData) {
   const subtotal = money(quantity * unitCost);
   const vatAmount = money(subtotal * (vatRate / 100));
   const total = money(subtotal + vatAmount);
+
+  if (costTypeValue === "supplier_invoice") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plan, subscription_status, trial_expires_at")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!hasProAccess(profile)) {
+      redirect(
+        "/pricing?message=Supplier invoices are available on Tradio Pro and Elite.",
+      );
+    }
+  }
 
   if (
     !jobId ||

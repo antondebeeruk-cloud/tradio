@@ -3,6 +3,7 @@ import {
   BriefcaseBusiness,
   Download,
   FileText,
+  Lock,
   ReceiptText,
   TrendingUp,
 } from "lucide-react";
@@ -10,6 +11,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { currency } from "@/lib/documents";
+import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 const jobStatusLabels: Record<string, string> = {
@@ -92,6 +94,49 @@ const reportDownloads = [
   },
 ];
 
+function ReportDownloadCards({ locked = false }: { locked?: boolean }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      {reportDownloads.map((report) => (
+        <article className="surface-pad flex flex-col" key={report.title}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-field text-forest">
+              <report.icon aria-hidden="true" size={20} />
+            </div>
+            {locked ? (
+              <span className="status-pill inline-flex items-center gap-1 bg-[#fff0e7] text-[#d94800]">
+                <Lock aria-hidden="true" size={12} />
+                Elite
+              </span>
+            ) : null}
+          </div>
+          <h3 className="mt-4 font-semibold">{report.title}</h3>
+          <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">
+            {report.description}
+          </p>
+          <Link
+            className={`${locked ? "btn-secondary" : "btn-primary"} mt-5 w-full`}
+            href={
+              locked
+                ? `/pricing?message=${encodeURIComponent(
+                    `${report.title} is available on Tradio Elite.`,
+                  )}`
+                : report.href
+            }
+          >
+            {locked ? (
+              <Lock aria-hidden="true" size={17} />
+            ) : (
+              <Download aria-hidden="true" size={17} />
+            )}
+            {locked ? "Upgrade to Elite" : "Download PDF"}
+          </Link>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 type NamedRelation =
   | { name?: string | null }
   | { quote_number?: string | null; total?: number | string | null }
@@ -145,9 +190,39 @@ export default async function ReportsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan")
+    .select("plan, subscription_status, trial_expires_at")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (!hasEliteAccess(profile)) {
+    return (
+      <AppShell active="reports" plan={profile?.plan}>
+        <header className="app-page-header">
+          <div>
+            <p className="eyebrow">Elite reports</p>
+            <h1 className="page-title">See what is driving your profit.</h1>
+          </div>
+          <Link className="btn-accent" href="/pricing">
+            <Lock aria-hidden="true" size={17} />
+            Upgrade to Elite
+          </Link>
+        </header>
+        <div className="app-page-body">
+          <section className="surface-pad mb-6">
+            <h2 className="text-lg font-semibold">
+              Turn business activity into useful decisions.
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Preview every report below. Upgrade to Elite to unlock your live
+              figures, PDF downloads, profit trends, VAT summary, and quote
+              conversion insights.
+            </p>
+          </section>
+          <ReportDownloadCards locked />
+        </div>
+      </AppShell>
+    );
+  }
 
   const [quotesResult, invoicesResult, jobsResult, jobCostsResult] =
     await Promise.all([
@@ -350,23 +425,7 @@ export default async function ReportsPage() {
               Download the figures you need.
             </h2>
           </div>
-          <div className="grid gap-4 lg:grid-cols-3">
-            {reportDownloads.map((report) => (
-              <article className="surface-pad flex flex-col" key={report.title}>
-                <div className="flex size-10 items-center justify-center rounded-lg bg-field text-forest">
-                  <report.icon aria-hidden="true" size={20} />
-                </div>
-                <h3 className="mt-4 font-semibold">{report.title}</h3>
-                <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">
-                  {report.description}
-                </p>
-                <Link className="btn-primary mt-5 w-full" href={report.href}>
-                  <Download aria-hidden="true" size={17} />
-                  Download PDF
-                </Link>
-              </article>
-            ))}
-          </div>
+          <ReportDownloadCards />
         </section>
 
         <section className="surface mt-6 overflow-hidden">

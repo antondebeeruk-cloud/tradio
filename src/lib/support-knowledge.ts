@@ -27,17 +27,17 @@ const supportTopics: SupportTopic[] = [
   {
     terms: ["job", "jobs", "tracking", "job tracking"],
     answer:
-      "Job Tracking is available on Elite and during the free trial. Use Jobs to link work to a customer, quote, or invoice, then track status, start date, due date, completed date, and notes.",
+      "Job Tracking is available on every paid plan and during the free trial. Use Jobs to link work to a customer, quote, or invoice, then track status, dates, hours, costs, and notes.",
   },
   {
     terms: ["report", "reports", "revenue", "conversion", "stats"],
     answer:
-      "Reports are available to every Tradio user. They show quote totals, accepted quotes, invoices sent, paid invoices, unpaid invoice value, revenue, outstanding value, and quote conversion rate.",
+      "Advanced Reports are available on Elite and during the free trial. Lite and Pro users can preview each report before upgrading.",
   },
   {
-    terms: ["plan", "pricing", "subscription", "trial", "lite", "elite", "paypal", "upgrade"],
+    terms: ["plan", "pricing", "subscription", "trial", "lite", "pro", "elite", "paypal", "upgrade"],
     answer:
-      "Tradio has a 10 day free trial, Lite, and Elite. Every plan can use all Tradio modules, including Reports, Jobs, Receipts, Leads, Quotes, and Invoices. You can review or upgrade your plan from the Account page.",
+      "Tradio has a 14 day free trial, Lite at GBP 9.99 monthly, Pro at GBP 19.99 monthly, and Elite at GBP 34.99 monthly. Annual billing saves about 20%. Elite unlocks advanced reports.",
   },
   {
     terms: ["pdf", "export", "email customer", "attachment", "send email"],

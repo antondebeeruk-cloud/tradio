@@ -70,21 +70,27 @@ const plans = [
   {
     description: "Try Tradio with no payment required.",
     name: "Free Trial",
-    price: "10 days free",
-    points: ["No card needed", "All Tradio modules", "Reports and jobs", "Lead inbox"],
+    price: "14 days free",
+    points: ["No card needed", "All Elite features", "Cancel anytime"],
   },
   {
-    description: "For sole traders who want the complete Tradio workflow.",
+    description: "Run your jobs. For sole traders getting started.",
     name: "Lite",
-    price: "£5.99/month",
-    points: ["All Tradio modules", "Reports and jobs", "Receipts", "PDF and email export"],
+    price: "£9.99/month",
+    points: ["Customers and leads", "Quotes and invoices", "Jobs and basic expenses"],
   },
   {
-    description: "For growing trade businesses that want everything.",
+    description: "Run your business. For busy self-employed tradespeople.",
     featured: true,
+    name: "Pro",
+    price: "£19.99/month",
+    points: ["Everything in Lite", "Supplier invoices", "PDFs and job profit"],
+  },
+  {
+    description: "Grow your business with reports and financial insight.",
     name: "Elite",
-    price: "£15.99/month",
-    points: ["All Tradio modules", "Reports and jobs", "Receipts", "Full business workflow"],
+    price: "£34.99/month",
+    points: ["Everything in Pro", "Advanced reports", "VAT and performance insights"],
   },
 ];
 
@@ -123,13 +129,19 @@ const structuredData = {
         {
           "@type": "Offer",
           name: "Lite",
-          price: "5.99",
+          price: "9.99",
+          priceCurrency: "GBP",
+        },
+        {
+          "@type": "Offer",
+          name: "Pro",
+          price: "19.99",
           priceCurrency: "GBP",
         },
         {
           "@type": "Offer",
           name: "Elite",
-          price: "15.99",
+          price: "34.99",
           priceCurrency: "GBP",
         },
       ],
@@ -390,7 +402,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
+          <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {plans.map((plan) => (
               <article
                 className={`surface-pad flex flex-col ${
@@ -430,7 +442,7 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <Clock aria-hidden="true" className="text-copper" size={22} />
               <p className="text-sm font-black uppercase tracking-[0.12em] text-white/70">
-                10 days free
+                14 days free
               </p>
             </div>
             <h2 className="mt-3 text-3xl font-black">

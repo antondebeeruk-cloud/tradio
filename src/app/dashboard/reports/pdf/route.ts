@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { currency, formatDate } from "@/lib/documents";
 import { createReportPdf } from "@/lib/report-pdf";
+import { hasEliteAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 type NamedRelation =
@@ -63,9 +64,16 @@ export async function GET(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("business_name")
+    .select("business_name, plan, subscription_status, trial_expires_at")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (!hasEliteAccess(profile)) {
+    return NextResponse.json(
+      { error: "This report is available on Tradio Elite." },
+      { status: 403 },
+    );
+  }
 
   const [quotesResult, invoicesResult, jobsResult, jobCostsResult] =
     await Promise.all([

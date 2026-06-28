@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { currency } from "@/lib/documents";
 import { sendEmailWithPdf } from "@/lib/email";
 import { createDocumentPdf } from "@/lib/pdf";
+import { hasProAccess } from "@/lib/subscription";
 
 type DocumentCustomer = {
   email: string | null;
@@ -30,6 +31,18 @@ async function requireUser() {
 
   if (!user) {
     redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan, subscription_status, trial_expires_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!hasProAccess(profile)) {
+    redirect(
+      "/pricing?message=PDF exports and PDF email attachments are available on Tradio Pro and Elite.",
+    );
   }
 
   return { supabase, user };

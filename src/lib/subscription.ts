@@ -17,15 +17,27 @@ export function hasActiveSubscription(profile: ProfileSubscription | null) {
     return new Date(profile.trial_expires_at).getTime() > Date.now();
   }
 
-  return profile.plan === "lite" || profile.plan === "elite";
+  return ["lite", "pro", "elite"].includes(profile.plan);
+}
+
+export function hasProAccess(profile: ProfileSubscription | null) {
+  if (!hasActiveSubscription(profile)) {
+    return false;
+  }
+
+  return profile?.plan === "trial" || profile?.plan === "pro" || profile?.plan === "elite";
 }
 
 export function hasEliteAccess(profile: ProfileSubscription | null) {
-  return hasActiveSubscription(profile);
+  if (!hasActiveSubscription(profile)) {
+    return false;
+  }
+
+  return profile?.plan === "trial" || profile?.plan === "elite";
 }
 
 export function trialExpiryDate() {
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 10);
+  expiresAt.setDate(expiresAt.getDate() + 14);
   return expiresAt;
 }

@@ -1,4 +1,5 @@
-type TradioPaidPlan = "lite" | "elite";
+type TradioPaidPlan = "lite" | "pro" | "elite";
+type BillingInterval = "monthly" | "annual";
 
 type PayPalLink = {
   href: string;
@@ -27,10 +28,12 @@ function requireEnv(name: string) {
   return value;
 }
 
-export function paypalPlanId(plan: TradioPaidPlan) {
-  return requireEnv(
-    plan === "lite" ? "PAYPAL_LITE_PLAN_ID" : "PAYPAL_ELITE_PLAN_ID",
-  );
+export function paypalPlanId(
+  plan: TradioPaidPlan,
+  billingInterval: BillingInterval,
+) {
+  const intervalName = billingInterval === "annual" ? "ANNUAL" : "MONTHLY";
+  return requireEnv(`PAYPAL_${plan.toUpperCase()}_${intervalName}_PLAN_ID`);
 }
 
 async function paypalAccessToken() {

@@ -12,7 +12,7 @@ const starterQuestions = [
   "How do I create and send a quote?",
   "How do I convert an accepted quote into an invoice?",
   "Why are leads not showing from my mailbox?",
-  "How do Lite and Elite differ?",
+  "How do Lite, Pro, and Elite differ?",
 ];
 
 export function SupportAiChat() {

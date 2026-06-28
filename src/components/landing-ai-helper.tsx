@@ -6,7 +6,7 @@ import { getBuiltInSupportAnswer } from "@/lib/support-knowledge";
 
 const quickQuestions = [
   "How do quotes work?",
-  "What does Elite include?",
+  "Which Tradio plan suits me?",
   "How do leads work?",
 ];
 
