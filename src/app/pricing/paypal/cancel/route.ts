@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { siteRedirect } from "@/lib/site-url";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   return NextResponse.redirect(
-    new URL("/pricing?message=PayPal checkout was cancelled.", request.url),
+    siteRedirect("/pricing?message=PayPal checkout was cancelled."),
   );
 }

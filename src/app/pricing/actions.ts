@@ -1,8 +1,8 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createPayPalSubscription, paypalPlanId } from "@/lib/paypal";
+import { siteUrl } from "@/lib/site-url";
 import { hasActiveSubscription, trialExpiryDate } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
@@ -25,15 +25,6 @@ async function requireUser() {
   }
 
   return { supabase, user };
-}
-
-async function requestOrigin() {
-  const headerStore = await headers();
-  return (
-    headerStore.get("origin") ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:3000"
-  );
 }
 
 export async function startFreeTrial() {
@@ -85,7 +76,7 @@ export async function startPayPalCheckout(formData: FormData) {
   }
 
   const { supabase, user } = await requireUser();
-  const origin = await requestOrigin();
+  const origin = siteUrl();
   let approvalUrl = "";
 
   try {

@@ -1,15 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { cancelPayPalSubscription, getPayPalSubscription } from "@/lib/paypal";
+import { siteRedirect } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.redirect(new URL("/login?redirectedFrom=/pricing", request.url));
+    return NextResponse.redirect(siteRedirect("/login?redirectedFrom=/pricing"));
   }
 
   const { data: profile } = await supabase
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     !["monthly", "annual"].includes(profile.pending_billing_interval ?? "")
   ) {
     return NextResponse.redirect(
-      new URL("/pricing?message=No pending PayPal subscription was found.", request.url),
+      siteRedirect("/pricing?message=No pending PayPal subscription was found."),
     );
   }
 
@@ -37,11 +38,10 @@ export async function GET(request: NextRequest) {
 
     if (subscription.status !== "ACTIVE") {
       return NextResponse.redirect(
-        new URL(
+        siteRedirect(
           `/pricing?message=${encodeURIComponent(
             "PayPal has not activated the subscription yet. Please try again in a moment.",
           )}`,
-          request.url,
         ),
       );
     }
@@ -73,16 +73,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(siteRedirect("/dashboard"));
   } catch (error) {
     return NextResponse.redirect(
-      new URL(
+      siteRedirect(
         `/pricing?message=${encodeURIComponent(
           error instanceof Error
             ? error.message
             : "PayPal subscription could not be verified.",
         )}`,
-        request.url,
       ),
     );
   }
