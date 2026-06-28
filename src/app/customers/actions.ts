@@ -30,30 +30,50 @@ async function requireUser() {
 export async function createCustomer(formData: FormData) {
   const { supabase, user } = await requireUser();
   const name = getString(formData, "name");
+  const returnTo =
+    getString(formData, "return_to") === "/quotes/new"
+      ? "/quotes/new"
+      : "/customers";
+  const returnQuery =
+    returnTo === "/quotes/new" ? "&returnTo=%2Fquotes%2Fnew" : "";
 
   if (!name) {
     redirect(
-      `/customers/new?message=${encodeURIComponent("Customer name is required")}`,
+      `/customers/new?message=${encodeURIComponent("Customer name is required")}${returnQuery}`,
     );
   }
 
-  const { error } = await supabase.from("customers").insert({
-    user_id: user.id,
-    name,
-    email: optionalString(formData, "email"),
-    phone: optionalString(formData, "phone"),
-    address_line_1: optionalString(formData, "address_line_1"),
-    address_line_2: optionalString(formData, "address_line_2"),
-    town: optionalString(formData, "town"),
-    postcode: optionalString(formData, "postcode"),
-    notes: optionalString(formData, "notes"),
-  });
+  const { data: customer, error } = await supabase
+    .from("customers")
+    .insert({
+      user_id: user.id,
+      name,
+      email: optionalString(formData, "email"),
+      phone: optionalString(formData, "phone"),
+      address_line_1: optionalString(formData, "address_line_1"),
+      address_line_2: optionalString(formData, "address_line_2"),
+      town: optionalString(formData, "town"),
+      postcode: optionalString(formData, "postcode"),
+      notes: optionalString(formData, "notes"),
+    })
+    .select("id")
+    .single();
 
   if (error) {
-    redirect(`/customers/new?message=${encodeURIComponent(error.message)}`);
+    redirect(
+      `/customers/new?message=${encodeURIComponent(error.message)}${returnQuery}`,
+    );
   }
 
   revalidatePath("/customers");
+  revalidatePath("/quotes/new");
+
+  if (returnTo === "/quotes/new") {
+    redirect(
+      `/quotes/new?customerId=${encodeURIComponent(customer.id)}&message=${encodeURIComponent("Customer added")}`,
+    );
+  }
+
   redirect(`/customers?message=${encodeURIComponent("Customer added")}`);
 }
 

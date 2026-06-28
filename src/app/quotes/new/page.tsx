@@ -87,7 +87,7 @@ export default async function NewQuotePage({ searchParams }: NewQuotePageProps) 
             </p>
             <Link
               className="btn-accent mt-5"
-              href="/customers/new"
+              href="/customers/new?returnTo=%2Fquotes%2Fnew"
             >
               <Plus aria-hidden="true" size={17} />
               Add customer

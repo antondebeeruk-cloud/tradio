@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 
 type CustomerOption = {
@@ -64,6 +65,7 @@ export function QuoteForm({
   savedItems = [],
   selectedCustomerId,
 }: QuoteFormProps) {
+  const router = useRouter();
   const [items, setItems] = useState<QuoteItem[]>([createBlankItem("item-1")]);
   const [vatRate, setVatRate] = useState("20");
   const nextItemId = useRef(2);
@@ -126,9 +128,15 @@ export function QuoteForm({
               defaultValue={selectedCustomerId ?? ""}
               id="customer_id"
               name="customer_id"
+              onChange={(event) => {
+                if (event.target.value === "__create_customer__") {
+                  router.push("/customers/new?returnTo=%2Fquotes%2Fnew");
+                }
+              }}
               required
             >
               <option value="">Choose a customer</option>
+              <option value="__create_customer__">+ Create new customer</option>
               {customers.map((customer) => (
                 <option key={customer.id} value={customer.id}>
                   {customer.name}

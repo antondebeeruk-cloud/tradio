@@ -16,6 +16,7 @@ type CustomerFormProps = {
   action: (formData: FormData) => Promise<void>;
   customer?: Customer;
   message?: string;
+  returnTo?: string;
   submitLabel: string;
 };
 
@@ -26,11 +27,13 @@ export function CustomerForm({
   action,
   customer,
   message,
+  returnTo = "/customers",
   submitLabel,
 }: CustomerFormProps) {
   return (
     <form action={action} className="space-y-5">
       {customer?.id ? <input name="id" type="hidden" value={customer.id} /> : null}
+      <input name="return_to" type="hidden" value={returnTo} />
 
       <div>
         <label className="text-sm font-medium" htmlFor="name">
@@ -149,7 +152,7 @@ export function CustomerForm({
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Link
           className="btn-secondary px-4"
-          href="/customers"
+          href={returnTo}
         >
           Cancel
         </Link>
