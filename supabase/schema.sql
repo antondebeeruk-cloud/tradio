@@ -144,6 +144,7 @@ create table if not exists public.jobs (
   customer_id uuid not null,
   title text not null,
   job_type text,
+  hours_worked numeric(10, 2) not null default 0 check (hours_worked >= 0),
   description text,
   status text not null default 'not_started'
     check (status in ('not_started', 'in_progress', 'completed', 'cancelled')),

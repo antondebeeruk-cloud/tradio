@@ -69,6 +69,27 @@ const reportDownloads = [
     icon: TrendingUp,
     title: "Best Job Types",
   },
+  {
+    description:
+      "Total material spend by supplier, cost category breakdowns, and monthly purchasing trends.",
+    href: "/dashboard/reports/material-spend/pdf",
+    icon: ReceiptText,
+    title: "Material Spend Report",
+  },
+  {
+    description:
+      "VAT collected on invoices, VAT paid on purchases, VAT due, and a monthly accountant-friendly breakdown.",
+    href: "/dashboard/reports/vat-summary/pdf",
+    icon: FileText,
+    title: "VAT Summary",
+  },
+  {
+    description:
+      "Hours worked, revenue, profit, and average hourly earnings across completed jobs.",
+    href: "/dashboard/reports/time-vs-money/pdf",
+    icon: BarChart3,
+    title: "Time vs Money Report",
+  },
 ];
 
 type NamedRelation =

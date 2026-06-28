@@ -14,6 +14,7 @@ type TotalRelation = { total?: number | string | null };
 
 type JobForReport = {
   customers: CustomerRelation | CustomerRelation[] | null;
+  hours_worked: number | string | null;
   id: string;
   invoices: TotalRelation | TotalRelation[] | null;
   job_type: string | null;
@@ -79,6 +80,7 @@ function jobFigures(jobs: JobForReport[], costs: CostForReport[]) {
 
     return {
       customerName: relationName(job.customers),
+      hoursWorked: numberValue(job.hours_worked),
       income,
       jobType: job.job_type?.trim() || job.title,
       margin: income > 0 ? (profit / income) * 100 : 0,
@@ -334,7 +336,7 @@ async function loadCompletedJobFigures(
     supabase
       .from("jobs")
       .select(
-        "id, title, job_type, customers(name), quotes(total), invoices(total)",
+        "id, title, job_type, hours_worked, customers(name), quotes(total), invoices(total)",
       )
       .eq("user_id", userId)
       .eq("status", "completed")
@@ -529,6 +531,226 @@ async function outstandingReport(
   });
 }
 
+async function materialSpendReport(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  businessName: string,
+) {
+  const { data, error } = await supabase
+    .from("job_costs")
+    .select("supplier_name, category, purchase_date, total")
+    .eq("user_id", userId);
+
+  if (error) throw error;
+
+  const allCosts = data ?? [];
+  const materialCosts = allCosts.filter((cost) => cost.category === "materials");
+  const supplierTotals = materialCosts.reduce<Record<string, number>>(
+    (map, cost) => {
+      const supplier = cost.supplier_name?.trim() || "No supplier recorded";
+      map[supplier] = (map[supplier] ?? 0) + numberValue(cost.total);
+      return map;
+    },
+    {},
+  );
+  const categoryTotals = allCosts.reduce<Record<string, number>>((map, cost) => {
+    const category = cost.category?.trim() || "other";
+    map[category] = (map[category] ?? 0) + numberValue(cost.total);
+    return map;
+  }, {});
+  const materialByMonth = materialCosts.reduce<Record<string, number>>(
+    (map, cost) => {
+      const key = cost.purchase_date.slice(0, 7);
+      map[key] = (map[key] ?? 0) + numberValue(cost.total);
+      return map;
+    },
+    {},
+  );
+  const monthKeys = Array.from({ length: 12 }, (_, offset) => {
+    const date = new Date();
+    date.setUTCDate(1);
+    date.setUTCMonth(date.getUTCMonth() - (11 - offset));
+    return date.toISOString().slice(0, 7);
+  });
+  const totalSpent = materialCosts.reduce(
+    (total, cost) => total + numberValue(cost.total),
+    0,
+  );
+  const suppliers = Object.entries(supplierTotals).sort(
+    ([, left], [, right]) => right - left,
+  );
+
+  return createFinancialReportPdf({
+    businessName,
+    generatedAt: formatDate(new Date().toISOString()),
+    sections: [
+      {
+        columns: [
+          { label: "Supplier", x: 50 },
+          { label: "Material spend", x: 350 },
+        ],
+        rows: suppliers.map(([supplier, total]) => [supplier, money(total)]),
+        title: "Material spend by supplier",
+      },
+      {
+        columns: [
+          { label: "Cost category", x: 50 },
+          { label: "Total spend", x: 350 },
+        ],
+        rows: Object.entries(categoryTotals)
+          .sort(([, left], [, right]) => right - left)
+          .map(([category, total]) => [
+            category.replace(/_/g, " ").replace(/^./, (letter) => letter.toUpperCase()),
+            money(total),
+          ]),
+        title: "Spend by category",
+      },
+      {
+        columns: [
+          { label: "Month", x: 50 },
+          { label: "Material spend", x: 350 },
+        ],
+        rows: monthKeys.map((key) => [
+          periodLabel(key, "month"),
+          money(materialByMonth[key] ?? 0),
+        ]),
+        title: "Monthly material spend trend",
+      },
+    ],
+    stats: [
+      { label: "Total material spend", value: money(totalSpent) },
+      { label: "Suppliers", value: String(suppliers.length) },
+      {
+        label: "Largest supplier spend",
+        value: suppliers[0]
+          ? `${suppliers[0][0]} - ${money(suppliers[0][1])}`
+          : "No data",
+      },
+    ],
+    title: "Material Spend Report",
+  });
+}
+
+async function vatSummaryReport(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  businessName: string,
+) {
+  const [invoiceResult, costResult] = await Promise.all([
+    supabase
+      .from("invoices")
+      .select("issue_date, vat_amount")
+      .eq("user_id", userId),
+    supabase
+      .from("job_costs")
+      .select("purchase_date, vat_amount")
+      .eq("user_id", userId),
+  ]);
+  const error = invoiceResult.error ?? costResult.error;
+  if (error) throw error;
+
+  const invoices = invoiceResult.data ?? [];
+  const costs = costResult.data ?? [];
+  const collected = invoices.reduce(
+    (total, invoice) => total + numberValue(invoice.vat_amount),
+    0,
+  );
+  const paid = costs.reduce(
+    (total, cost) => total + numberValue(cost.vat_amount),
+    0,
+  );
+  const monthly = new Map<string, { collected: number; paid: number }>();
+  const getMonth = (key: string) => {
+    const existing = monthly.get(key);
+    if (existing) return existing;
+    const created = { collected: 0, paid: 0 };
+    monthly.set(key, created);
+    return created;
+  };
+  invoices.forEach((invoice) => {
+    getMonth(invoice.issue_date.slice(0, 7)).collected += numberValue(
+      invoice.vat_amount,
+    );
+  });
+  costs.forEach((cost) => {
+    getMonth(cost.purchase_date.slice(0, 7)).paid += numberValue(cost.vat_amount);
+  });
+
+  return createFinancialReportPdf({
+    businessName,
+    generatedAt: formatDate(new Date().toISOString()),
+    sections: [
+      {
+        columns: [
+          { label: "Month", x: 50 },
+          { label: "VAT collected", x: 240 },
+          { label: "VAT paid", x: 365 },
+          { label: "VAT due", x: 480 },
+        ],
+        rows: Array.from(monthly.entries())
+          .sort(([left], [right]) => right.localeCompare(left))
+          .map(([key, values]) => [
+            periodLabel(key, "month"),
+            money(values.collected),
+            money(values.paid),
+            money(values.collected - values.paid),
+          ]),
+        title: "Monthly VAT summary",
+      },
+    ],
+    stats: [
+      { label: "VAT collected", value: money(collected) },
+      { label: "VAT paid", value: money(paid) },
+      { label: "VAT due", value: money(collected - paid) },
+      { label: "Basis", value: "All recorded invoices and purchases" },
+    ],
+    title: "VAT Summary",
+  });
+}
+
+async function timeVsMoneyReport(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  businessName: string,
+) {
+  const jobs = await loadCompletedJobFigures(supabase, userId);
+  const hours = jobs.reduce((total, job) => total + job.hoursWorked, 0);
+  const revenue = jobs.reduce((total, job) => total + job.income, 0);
+  const profit = jobs.reduce((total, job) => total + job.profit, 0);
+  const averagePerHour = hours > 0 ? revenue / hours : 0;
+
+  return createFinancialReportPdf({
+    businessName,
+    generatedAt: formatDate(new Date().toISOString()),
+    sections: [
+      {
+        columns: [
+          { label: "Completed job", x: 50 },
+          { label: "Hours", x: 270 },
+          { label: "Revenue", x: 345 },
+          { label: "Profit", x: 440 },
+          { label: "Revenue/hour", x: 520 },
+        ],
+        rows: jobs.map((job) => [
+          job.title,
+          job.hoursWorked.toFixed(2),
+          money(job.income),
+          money(job.profit),
+          money(job.hoursWorked > 0 ? job.income / job.hoursWorked : 0),
+        ]),
+        title: "Time and earnings by completed job",
+      },
+    ],
+    stats: [
+      { label: "Hours worked", value: hours.toFixed(2) },
+      { label: "Revenue", value: money(revenue) },
+      { label: "Profit", value: money(profit) },
+      { label: "Average revenue per hour", value: money(averagePerHour) },
+    ],
+    title: "Time vs Money Report",
+  });
+}
+
 async function quoteSuccessReport(
   supabase: ReturnType<typeof createClient>,
   userId: string,
@@ -615,6 +837,15 @@ export async function GET(request: Request, { params }: ReportRouteProps) {
     } else if (params.report === "best-job-types") {
       pdf = await bestJobTypesReport(supabase, user.id, businessName);
       filename = "tradio-best-job-types.pdf";
+    } else if (params.report === "material-spend") {
+      pdf = await materialSpendReport(supabase, user.id, businessName);
+      filename = "tradio-material-spend.pdf";
+    } else if (params.report === "vat-summary") {
+      pdf = await vatSummaryReport(supabase, user.id, businessName);
+      filename = "tradio-vat-summary.pdf";
+    } else if (params.report === "time-vs-money") {
+      pdf = await timeVsMoneyReport(supabase, user.id, businessName);
+      filename = "tradio-time-vs-money.pdf";
     } else if (params.report === "outstanding-payments") {
       pdf = await outstandingReport(supabase, user.id, businessName);
       filename = "tradio-outstanding-payments.pdf";

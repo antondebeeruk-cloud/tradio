@@ -148,7 +148,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
       supabase
         .from("jobs")
         .select(
-          "id, customer_id, title, job_type, description, status, start_date, due_date, completed_at, related_quote_id, related_invoice_id, notes, created_at, customers(name), quotes(quote_number,total), invoices(invoice_number,total)",
+          "id, customer_id, title, job_type, hours_worked, description, status, start_date, due_date, completed_at, related_quote_id, related_invoice_id, notes, created_at, customers(name), quotes(quote_number,total), invoices(invoice_number,total)",
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
@@ -270,6 +270,21 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                   id="job_type"
                   name="job_type"
                   placeholder="Bathrooms, Boilers, Leaks, Call-outs..."
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium" htmlFor="hours_worked">
+                  Hours worked
+                </label>
+                <input
+                  className="field-control"
+                  id="hours_worked"
+                  min="0"
+                  name="hours_worked"
+                  placeholder="0"
+                  step="0.25"
+                  type="number"
                 />
               </div>
 
@@ -414,6 +429,11 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                         {job.job_type ? (
                           <span className="rounded-lg bg-[#fff0e7] px-2 py-1 text-[#d94800]">
                             Type: {job.job_type}
+                          </span>
+                        ) : null}
+                        {numberValue(job.hours_worked) > 0 ? (
+                          <span className="rounded-lg bg-field px-2 py-1">
+                            {numberValue(job.hours_worked).toFixed(2)} hours
                           </span>
                         ) : null}
                         {relationName(job.quotes) ? (
@@ -747,6 +767,18 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                           defaultValue={job.job_type ?? ""}
                           name="job_type"
                           placeholder="Bathrooms, Boilers, Leaks, Call-outs..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Hours worked</label>
+                        <input
+                          className="field-control"
+                          defaultValue={numberValue(job.hours_worked)}
+                          min="0"
+                          name="hours_worked"
+                          step="0.25"
+                          type="number"
                         />
                       </div>
 
