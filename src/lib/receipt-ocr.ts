@@ -11,6 +11,9 @@ const OCR_TIMEOUT_MS = 120_000;
 const LOCAL_ENG_LANG_PATH =
   process.env.TESSERACT_ENG_LANG_PATH ??
   `${process.cwd()}/node_modules/@tesseract.js-data/eng/4.0.0`;
+const OCR_WORKER_PATH =
+  process.env.TESSERACT_WORKER_PATH ??
+  `${process.cwd()}/node_modules/tesseract.js/src/worker-script/node/index.js`;
 
 type OcrWorker = {
   recognize: (image: Buffer) => Promise<{ data: { text: string } }>;
@@ -53,6 +56,7 @@ async function getOcrWorker() {
           cachePath: "/tmp/tradio-tesseract",
           gzip: true,
           langPath: LOCAL_ENG_LANG_PATH,
+          workerPath: OCR_WORKER_PATH,
         })) as OcrWorker;
 
         await worker.setParameters?.({
