@@ -74,22 +74,28 @@ const plans = [
     points: ["No card needed", "All Elite features", "Cancel anytime"],
   },
   {
+    annualPrice: "£99/year",
     description: "Run your jobs. For sole traders getting started.",
     name: "Lite",
     price: "£9.99/month",
+    saving: "Save about £21",
     points: ["Customers and leads", "Quotes and invoices", "Jobs and basic expenses"],
   },
   {
+    annualPrice: "£199/year",
     description: "Run your business. For busy self-employed tradespeople.",
     featured: true,
     name: "Pro",
     price: "£19.99/month",
+    saving: "Save about £41",
     points: ["Everything in Lite", "Supplier invoices", "PDFs and job profit"],
   },
   {
+    annualPrice: "£349/year",
     description: "Grow your business with reports and financial insight.",
     name: "Elite",
     price: "£34.99/month",
+    saving: "Save about £71",
     points: ["Everything in Pro", "Advanced reports", "VAT and performance insights"],
   },
 ];
@@ -134,14 +140,32 @@ const structuredData = {
         },
         {
           "@type": "Offer",
+          name: "Lite Annual",
+          price: "99",
+          priceCurrency: "GBP",
+        },
+        {
+          "@type": "Offer",
           name: "Pro",
           price: "19.99",
           priceCurrency: "GBP",
         },
         {
           "@type": "Offer",
+          name: "Pro Annual",
+          price: "199",
+          priceCurrency: "GBP",
+        },
+        {
+          "@type": "Offer",
           name: "Elite",
           price: "34.99",
+          priceCurrency: "GBP",
+        },
+        {
+          "@type": "Offer",
+          name: "Elite Annual",
+          price: "349",
           priceCurrency: "GBP",
         },
       ],
@@ -419,6 +443,16 @@ export default function Home() {
                   ) : null}
                 </div>
                 <p className="mt-4 text-3xl font-black">{plan.price}</p>
+                {plan.annualPrice ? (
+                  <div className="mt-2 rounded-lg bg-[#e7f7ef] px-3 py-2 text-sm">
+                    <p className="font-black text-[#177a55]">
+                      {plan.annualPrice}
+                    </p>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-600">
+                      {plan.saving} with annual billing
+                    </p>
+                  </div>
+                ) : null}
                 <p className="mt-3 text-sm leading-6 text-slate-600">
                   {plan.description}
                 </p>
