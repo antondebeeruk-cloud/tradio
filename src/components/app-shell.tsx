@@ -18,8 +18,8 @@ import { createClient } from "@/lib/supabase/server";
 
 const navItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Customers", href: "/customers", icon: UsersRound },
   { label: "Leads", href: "/dashboard/leads", icon: MailPlus },
+  { label: "Customers", href: "/customers", icon: UsersRound },
   { label: "Quotes", href: "/quotes", icon: FileText },
   { label: "Invoices", href: "/invoices", icon: ReceiptText },
   { label: "Receipts", href: "/dashboard/receipts", icon: ReceiptText },
