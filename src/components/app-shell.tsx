@@ -1,5 +1,6 @@
 import {
   FileText,
+  CalendarDays,
   LayoutDashboard,
   Lock,
   LogOut,
@@ -15,7 +16,7 @@ import Link from "next/link";
 import { logout } from "@/app/auth/actions";
 import { AccountMenu } from "@/components/account-menu";
 import { TradioLogo } from "@/components/tradio-logo";
-import { hasEliteAccess } from "@/lib/subscription";
+import { hasEliteAccess, hasProAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 const navItems = [
@@ -25,6 +26,12 @@ const navItems = [
   { label: "Quotes", href: "/quotes", icon: FileText },
   { label: "Invoices", href: "/invoices", icon: ReceiptText },
   { label: "Receipts", href: "/dashboard/receipts", icon: ReceiptText },
+  {
+    label: "Calendar",
+    href: "/dashboard/calendar",
+    icon: CalendarDays,
+    proOnly: true,
+  },
   {
     label: "Reports",
     href: "/dashboard/reports",
@@ -44,6 +51,7 @@ type AppShellProps = {
     | "quotes"
     | "invoices"
     | "receipts"
+    | "calendar"
     | "reports"
     | "jobs"
     | "support"
@@ -58,6 +66,7 @@ const activeByHref: Record<string, AppShellProps["active"]> = {
   "/dashboard": "dashboard",
   "/dashboard/leads": "leads",
   "/dashboard/jobs": "jobs",
+  "/dashboard/calendar": "calendar",
   "/dashboard/receipts": "receipts",
   "/dashboard/reports": "reports",
   "/dashboard/support": "support",
@@ -109,16 +118,21 @@ function planLabelFor(plan?: string | null) {
 function NavLink({
   active,
   canUseElite,
+  canUsePro,
   item,
   mobile = false,
 }: {
   active: AppShellProps["active"];
   canUseElite: boolean;
+  canUsePro: boolean;
   item: (typeof navItems)[number];
   mobile?: boolean;
 }) {
   const isActive = activeByHref[item.href] === active;
-  const isLocked = "eliteOnly" in item && item.eliteOnly && !canUseElite;
+  const eliteLocked = "eliteOnly" in item && item.eliteOnly && !canUseElite;
+  const proLocked = "proOnly" in item && item.proOnly && !canUsePro;
+  const isLocked = eliteLocked || proLocked;
+  const requiredPlan = eliteLocked ? "Elite" : "Pro";
   const Icon = item.icon;
 
   if (mobile) {
@@ -167,7 +181,7 @@ function NavLink({
         {isLocked ? (
           <span className="inline-flex items-center gap-1 rounded-lg bg-copper/20 px-2 py-0.5 text-[11px] font-bold text-white">
             <Lock aria-hidden="true" size={11} />
-            Elite
+            {requiredPlan}
           </span>
         ) : null}
       </span>
@@ -190,6 +204,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
   const email = user?.email ?? "";
   const displayName = profile?.full_name ?? email;
   const canUseElite = hasEliteAccess(profile);
+  const canUsePro = hasProAccess(profile);
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(255,90,0,0.08),transparent_26rem),linear-gradient(135deg,#edf4fa,#f7fbff)] text-ink">
@@ -209,6 +224,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
               <NavLink
                 active={active}
                 canUseElite={canUseElite}
+                canUsePro={canUsePro}
                 item={item}
                 key={item.label}
               />
@@ -264,6 +280,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
                   <NavLink
                     active={active}
                     canUseElite={canUseElite}
+                    canUsePro={canUsePro}
                     item={item}
                     key={item.label}
                     mobile

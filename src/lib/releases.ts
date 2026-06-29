@@ -15,6 +15,27 @@ export const tradioReleases: TradioRelease[] = [
     date: "29 June 2026",
     status: "Beta",
     summary:
+      "Tradio Pro Scheduling adds a connected calendar for planning appointments, job visits, reminders and working time.",
+    version: "0.10",
+    groups: [
+      {
+        title: "Pro scheduling and calendar",
+        features: [
+          "Plan appointments, job visits, reminders and blocked working time.",
+          "Navigate a full monthly calendar with a focused upcoming-work list.",
+          "Connect schedule entries to existing Tradio customers and jobs.",
+          "Show job start dates and deadlines alongside calendar appointments.",
+          "Create all-day entries and add times, locations, notes and statuses.",
+          "Edit, complete, cancel or delete schedule entries from one module.",
+          "Protect scheduling for active Trial, Pro and Elite accounts on both the server and database.",
+        ],
+      },
+    ],
+  },
+  {
+    date: "29 June 2026",
+    status: "Beta",
+    summary:
       "The first complete Tradio beta brings customer, sales, job, expense, reporting, subscription, and support workflows together for UK tradespeople.",
     version: "0.9",
     groups: [
