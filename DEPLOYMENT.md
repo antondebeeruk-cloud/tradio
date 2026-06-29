@@ -73,3 +73,13 @@ Deploy from the Vercel dashboard, then test:
 6. Accept the quote and convert it to an invoice.
 7. Open quote and invoice PDFs.
 8. Send a PDF email to a customer.
+
+## Release checklist
+
+Every public release must update the release history before deployment:
+
+1. Add the newest release to the top of `src/lib/releases.ts`.
+2. Include its version, date, status, summary, and customer-facing features.
+3. Update the application version in `package.json` and `package-lock.json`.
+4. Confirm the new entry appears at `/releases` on phone and desktop.
+5. Do not publish private administrator or infrastructure details in public notes.

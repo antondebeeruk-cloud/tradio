@@ -1,0 +1,74 @@
+export type TradioRelease = {
+  date: string;
+  groups: {
+    features: string[];
+    title: string;
+  }[];
+  status: "Beta" | "Stable";
+  summary: string;
+  version: string;
+};
+
+// Keep the newest release first so the page always leads with the current version.
+export const tradioReleases: TradioRelease[] = [
+  {
+    date: "29 June 2026",
+    status: "Beta",
+    summary:
+      "The first complete Tradio beta brings customer, sales, job, expense, reporting, subscription, and support workflows together for UK tradespeople.",
+    version: "0.9",
+    groups: [
+      {
+        title: "Customers, quotes and invoices",
+        features: [
+          "Create, edit, search and manage customer records.",
+          "Build quotes with reusable services and products, VAT calculations and quote statuses.",
+          "Convert accepted quotes into invoices and track unpaid, paid and overdue balances.",
+          "Export professional quote and invoice PDFs and email them as attachments.",
+          "Share customer portal links for quote acceptance and document downloads.",
+        ],
+      },
+      {
+        title: "Leads and follow-up",
+        features: [
+          "Give every account a unique Tradio lead email address.",
+          "Collect catch-all mailbox enquiries through secure server-side IMAP syncing.",
+          "Extract customer details, phone numbers, postcodes and lead sources from emails.",
+          "Convert leads into customers or quotes and manage lead statuses.",
+          "Send friendly automated reminders for unpaid invoices.",
+        ],
+      },
+      {
+        title: "Jobs, receipts and profitability",
+        features: [
+          "Create jobs, track progress and connect customers, quotes and invoices.",
+          "Capture receipts and supplier invoices from phone photos or uploaded files.",
+          "Scan receipt images and PDFs, categorise expenses and allocate costs to jobs.",
+          "Compare job income, materials, labour, expenses, profit and margin.",
+          "Save job types and working hours for stronger profitability reporting.",
+        ],
+      },
+      {
+        title: "Reports and business insight",
+        features: [
+          "View profit, outstanding payment and quote success reports.",
+          "Track monthly revenue, job profitability and best-performing job types.",
+          "Review material spending, VAT summaries and time-versus-money figures.",
+          "Download individual reports or the complete report pack as PDFs.",
+        ],
+      },
+      {
+        title: "Plans, accounts and platform",
+        features: [
+          "Offer a 14-day trial plus Lite, Pro and Elite monthly or annual packages.",
+          "Connect PayPal subscriptions with verified callbacks and cancellation controls.",
+          "Provide account export, deletion requests, cookie preferences and legal pages.",
+          "Use a responsive phone layout across the customer workspace.",
+          "Protect routes and paid features on the server as well as in the interface.",
+        ],
+      },
+    ],
+  },
+];
+
+export const currentRelease = tradioReleases[0];

@@ -6,6 +6,9 @@ export function Footer() {
       <div className="mx-auto flex max-w-[1500px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p>Tradio. Quotes, invoices, jobs. Sorted.</p>
         <nav className="flex flex-wrap gap-x-5 gap-y-2">
+          <Link className="font-semibold text-forest hover:underline" href="/releases">
+            Releases
+          </Link>
           <Link className="font-semibold text-forest hover:underline" href="/privacy-policy">
             Privacy Policy
           </Link>
