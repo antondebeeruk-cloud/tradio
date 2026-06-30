@@ -12,6 +12,27 @@ export type TradioRelease = {
 // Keep the newest release first so the page always leads with the current version.
 export const tradioReleases: TradioRelease[] = [
   {
+    date: "30 June 2026",
+    status: "Beta",
+    summary:
+      "Tradio Pro Job Files keeps site photos, plans, certificates and documents securely attached to the work they belong to.",
+    version: "0.11",
+    groups: [
+      {
+        title: "Job photos and documents",
+        features: [
+          "Take job photos directly from a phone camera or choose existing files.",
+          "Upload up to six private files at once with a 15MB limit per file.",
+          "Preview site photos in a responsive gallery with editable captions.",
+          "Store and download PDFs, Word files, spreadsheets and text documents.",
+          "Open a dedicated files view from every tracked job.",
+          "Use temporary signed links so private files are not publicly exposed.",
+          "Protect file records and storage objects for active Trial, Pro and Elite accounts.",
+        ],
+      },
+    ],
+  },
+  {
     date: "29 June 2026",
     status: "Beta",
     summary:

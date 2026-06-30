@@ -2,12 +2,15 @@ import {
   BriefcaseBusiness,
   Check,
   Download,
+  Images,
   LinkIcon,
+  Lock,
   Plus,
   ReceiptText,
   Save,
   Trash2,
 } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   createJobCost,
@@ -24,6 +27,7 @@ import {
   signedReceiptDownloadUrl,
   signedReceiptUrl,
 } from "@/lib/receipt-attachments";
+import { hasProAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
 
 type JobsPageProps = {
@@ -125,7 +129,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan")
+    .select("plan, subscription_status, trial_expires_at")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -177,6 +181,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
   }
 
   const customers = customersResult.data ?? [];
+  const canUsePro = hasProAccess(profile);
   const quotes = quotesResult.data ?? [];
   const invoices = invoicesResult.data ?? [];
   const jobs = jobsResult.data ?? [];
@@ -453,6 +458,23 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                           </span>
                         ) : null}
                       </div>
+                      <Link
+                        className="btn-secondary mt-4 w-fit"
+                        href={
+                          canUsePro
+                            ? `/dashboard/jobs/${job.id}/files`
+                            : "/pricing?message=Job photos and documents are available on Tradio Pro and Elite."
+                        }
+                      >
+                        <Images aria-hidden="true" size={16} />
+                        Photos &amp; documents
+                        {!canUsePro ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-[#fff0e7] px-2 py-0.5 text-[11px] font-bold text-copper">
+                            <Lock aria-hidden="true" size={11} />
+                            Pro
+                          </span>
+                        ) : null}
+                      </Link>
                     </div>
 
                     <form action={updateJobStatus} className="flex gap-2">
