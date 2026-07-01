@@ -23,6 +23,7 @@ export const tradioReleases: TradioRelease[] = [
       "Keep browser GPS as a fallback for people using Tradio on the web.",
       "Open secure Tradio deep links through the native app URL scheme.",
       "Include Tradio app icons, launch screens and camera and location privacy descriptions.",
+      "Show Android and iPhone download controls on the public landing page.",
       "Provide Android Studio and Xcode projects ready for device testing and store signing."
     ] }]
   },

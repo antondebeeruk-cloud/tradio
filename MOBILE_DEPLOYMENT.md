@@ -26,6 +26,17 @@ npm run mobile:sync
 
 Normal Next.js page changes are served by `https://tradio.uk`, so deploy the website as usual. The app store binary only needs rebuilding when native code, permissions, plugins, icons or version details change.
 
+## Landing-page download buttons
+
+The landing page displays Android and iPhone download options. Add these public environment variables to the VPS when the signed builds are ready:
+
+```env
+NEXT_PUBLIC_ANDROID_APP_URL=https://tradio.uk/downloads/tradio-android.apk
+NEXT_PUBLIC_IOS_APP_URL=https://testflight.apple.com/join/YOUR_TESTFLIGHT_CODE
+```
+
+Restart Tradio after changing them. The Android value can point to a hosted APK or Google Play listing. The iPhone value should point to TestFlight or the App Store. Until a value exists, the matching button safely displays **Beta coming soon**.
+
 ## Android testing
 
 1. Install the current Android Studio and its Android SDK.

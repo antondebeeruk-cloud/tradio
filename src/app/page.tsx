@@ -5,9 +5,11 @@ import {
   BriefcaseBusiness,
   Check,
   Clock,
+  Download,
   FileText,
   MailPlus,
   ReceiptText,
+  Smartphone,
   UsersRound,
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -101,6 +103,8 @@ const plans = [
 ];
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tradio.uk";
+const androidDownloadUrl = process.env.NEXT_PUBLIC_ANDROID_APP_URL?.trim();
+const iosDownloadUrl = process.env.NEXT_PUBLIC_IOS_APP_URL?.trim();
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -320,6 +324,93 @@ export default function Home() {
           </div>
         </div>
         <LandingAiHelper />
+      </section>
+
+      <section
+        className="border-y border-white/10 bg-[#031426] px-5 py-14 text-white sm:px-8"
+        id="mobile-apps"
+      >
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+          <div>
+            <p className="eyebrow text-copper">Tradio mobile</p>
+            <h2 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">
+              Take the whole business to every job.
+            </h2>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-white/72 sm:text-base">
+              Customers, leads, quotes, invoices, jobs, receipts and mileage
+              stay connected across the web, Android and iPhone apps.
+            </p>
+            <Link
+              className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-white underline decoration-copper decoration-2 underline-offset-4"
+              href="/login"
+            >
+              Use Tradio on your phone now
+              <ArrowRight aria-hidden="true" size={16} />
+            </Link>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[
+              {
+                available: Boolean(androidDownloadUrl),
+                description: "Install the Tradio Android beta on a supported phone.",
+                href: androidDownloadUrl,
+                label: "Download Android",
+                platform: "Android app",
+              },
+              {
+                available: Boolean(iosDownloadUrl),
+                description: "Join the Tradio iPhone beta through TestFlight.",
+                href: iosDownloadUrl,
+                label: "Download iPhone",
+                platform: "iPhone app",
+              },
+            ].map((app) => (
+              <article
+                className="rounded-lg border border-white/14 bg-white/[0.07] p-5"
+                key={app.platform}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex size-11 items-center justify-center rounded-lg bg-copper text-white">
+                    <Smartphone aria-hidden="true" size={22} />
+                  </div>
+                  <span
+                    className={`status-pill ${
+                      app.available
+                        ? "bg-[#e7f7ef] text-[#177a55]"
+                        : "bg-white/10 text-white/70"
+                    }`}
+                  >
+                    {app.available ? "Available" : "Beta soon"}
+                  </span>
+                </div>
+                <h3 className="mt-5 text-xl font-black">{app.platform}</h3>
+                <p className="mt-2 min-h-12 text-sm leading-6 text-white/68">
+                  {app.description}
+                </p>
+                {app.href ? (
+                  <a
+                    className="btn-accent mt-5 w-full justify-center"
+                    href={app.href}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <Download aria-hidden="true" size={17} />
+                    {app.label}
+                  </a>
+                ) : (
+                  <span
+                    aria-disabled="true"
+                    className="mt-5 inline-flex min-h-11 w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/10 px-4 text-sm font-bold text-white/55"
+                  >
+                    <Download aria-hidden="true" size={17} />
+                    {app.platform} beta coming soon
+                  </span>
+                )}
+              </article>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="bg-white px-5 py-16 text-ink sm:px-8">
