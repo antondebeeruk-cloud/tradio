@@ -8,7 +8,7 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { formatDate } from "@/lib/documents";
-import { createClient } from "@/lib/supabase/server";
+import { createPersonalClient } from "@/lib/supabase/server";
 
 type AccountPageProps = {
   searchParams: Promise<{
@@ -38,7 +38,7 @@ function planLabel(plan?: string | null) {
 
 export default async function AccountPage({ searchParams }: AccountPageProps) {
   const search = await searchParams;
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

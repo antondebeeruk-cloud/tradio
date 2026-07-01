@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createPersonalClient } from "@/lib/supabase/server";
 
 function value(formData: FormData, key: string) {
   const entry = formData.get(key);
@@ -12,7 +12,7 @@ function value(formData: FormData, key: string) {
 export async function adminLogin(formData: FormData) {
   const email = value(formData, "email");
   const password = value(formData, "password");
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -48,8 +48,7 @@ export async function adminLogin(formData: FormData) {
 }
 
 export async function adminLogout() {
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   await supabase.auth.signOut();
   redirect("/admin/login");
 }
-

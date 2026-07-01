@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cancelPayPalSubscription } from "@/lib/paypal";
-import { createClient } from "@/lib/supabase/server";
+import { createPersonalClient } from "@/lib/supabase/server";
 
 async function requireUser() {
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

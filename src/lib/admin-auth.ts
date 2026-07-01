@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createPersonalClient } from "@/lib/supabase/server";
 
 export async function requirePlatformAdmin() {
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -54,4 +54,3 @@ export async function writeAdminAuditLog({
     target_user_id: targetUserId ?? null,
   });
 }
-

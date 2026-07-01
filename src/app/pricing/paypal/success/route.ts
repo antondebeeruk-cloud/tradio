@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { cancelPayPalSubscription, getPayPalSubscription } from "@/lib/paypal";
 import { siteRedirect } from "@/lib/site-url";
-import { createClient } from "@/lib/supabase/server";
+import { createPersonalClient } from "@/lib/supabase/server";
 
 export async function GET(_request: NextRequest) {
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

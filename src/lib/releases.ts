@@ -12,6 +12,27 @@ export type TradioRelease = {
 // Keep the newest release first so the page always leads with the current version.
 export const tradioReleases: TradioRelease[] = [
   {
+    date: "1 July 2026",
+    status: "Beta",
+    summary:
+      "Tradio Pro Team Access gives busy trade businesses one shared workspace for customers, quotes, invoices, jobs, schedules and files.",
+    version: "0.12",
+    groups: [
+      {
+        title: "Team access and shared workspaces",
+        features: [
+          "Invite a team member by email from a dedicated Team module.",
+          "Share customers, leads, quotes, invoices, receipts, jobs and calendar entries without copying records.",
+          "Give team members access to private job photos and documents through the same workspace protections.",
+          "Include two users on Pro and unlimited workspace seats on Elite.",
+          "Keep billing and personal account controls with the workspace owner.",
+          "Record recent workspace activity so owners can see who changed shared business records.",
+          "Remove a member without deleting their personal Tradio account.",
+        ],
+      },
+    ],
+  },
+  {
     date: "30 June 2026",
     status: "Beta",
     summary:

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPersonalClient } from "@/lib/supabase/server";
 import { generateLeadEmail } from "@/lib/lead-email";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       : "/dashboard";
 
   if (code) {
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
     await supabase.auth.exchangeCodeForSession(code);
 
     const {

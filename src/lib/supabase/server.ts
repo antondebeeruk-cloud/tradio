@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export async function createClient() {
+async function createBaseClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Missing Supabase environment variables.");
   }
@@ -41,4 +41,45 @@ export async function createClient() {
       },
     },
   });
+}
+
+export async function createPersonalClient() {
+  return createBaseClient();
+}
+
+export async function createClient() {
+  const client = await createBaseClient();
+  const getPersonalUser = client.auth.getUser.bind(client.auth);
+
+  client.auth.getUser = async (...args) => {
+    const result = await getPersonalUser(...args);
+    const personalUser = result.data.user;
+
+    if (!personalUser || result.error) {
+      return result;
+    }
+
+    const { data: membership, error } = await client
+      .from("workspace_members")
+      .select("owner_user_id")
+      .eq("user_id", personalUser.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (error || !membership?.owner_user_id) {
+      return result;
+    }
+
+    return {
+      ...result,
+      data: {
+        user: {
+          ...personalUser,
+          id: membership.owner_user_id,
+        },
+      },
+    };
+  };
+
+  return client;
 }

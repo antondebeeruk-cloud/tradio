@@ -160,10 +160,17 @@ export async function middleware(request: NextRequest) {
       hasValidSession = Boolean(data.user && !error);
 
       if (data.user && !error) {
+        const { data: membership } = await supabase
+          .from("workspace_members")
+          .select("owner_user_id")
+          .eq("user_id", data.user.id)
+          .eq("status", "active")
+          .maybeSingle();
+        const planOwnerId = membership?.owner_user_id ?? data.user.id;
         const { data: profile } = await supabase
           .from("profiles")
           .select("plan, subscription_status, trial_expires_at")
-          .eq("id", data.user.id)
+          .eq("id", planOwnerId)
           .maybeSingle();
         hasPlanAccess = hasActivePlan(profile);
       }

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createPayPalSubscription, paypalPlanId } from "@/lib/paypal";
 import { siteUrl } from "@/lib/site-url";
 import { hasActiveSubscription, trialExpiryDate } from "@/lib/subscription";
-import { createClient } from "@/lib/supabase/server";
+import { createPersonalClient } from "@/lib/supabase/server";
 
 type PaidPlan = "lite" | "pro" | "elite";
 type BillingInterval = "monthly" | "annual";
@@ -15,7 +15,7 @@ function getString(formData: FormData, key: string) {
 }
 
 async function requireUser() {
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { generateLeadEmail } from "@/lib/lead-email";
-import { createClient } from "@/lib/supabase/server";
+import { createPersonalClient } from "@/lib/supabase/server";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -19,7 +19,7 @@ export async function login(formData: FormData) {
     ? redirectedFrom
     : "/dashboard";
 
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   const { error } = await supabase.auth
     .signInWithPassword({
       email,
@@ -44,7 +44,7 @@ export async function signup(formData: FormData) {
   const businessName = getString(formData, "businessName");
   const origin = (await headers()).get("origin");
 
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   const { data, error } = await supabase.auth
     .signUp({
       email,
@@ -91,7 +91,7 @@ export async function signup(formData: FormData) {
 }
 
 export async function logout() {
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/login");

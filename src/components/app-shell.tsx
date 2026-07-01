@@ -10,6 +10,7 @@ import {
   MessageCircleQuestion,
   ReceiptText,
   Settings,
+  Users,
   UsersRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -39,6 +40,12 @@ const navItems = [
     eliteOnly: true,
   },
   { label: "Jobs", href: "/dashboard/jobs", icon: BriefcaseBusiness },
+  {
+    label: "Team",
+    href: "/dashboard/team",
+    icon: Users,
+    proOnly: true,
+  },
   { label: "Support", href: "/dashboard/support", icon: MessageCircleQuestion },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
@@ -54,6 +61,7 @@ type AppShellProps = {
     | "calendar"
     | "reports"
     | "jobs"
+    | "team"
     | "support"
     | "settings"
     | "account";
@@ -66,6 +74,7 @@ const activeByHref: Record<string, AppShellProps["active"]> = {
   "/dashboard": "dashboard",
   "/dashboard/leads": "leads",
   "/dashboard/jobs": "jobs",
+  "/dashboard/team": "team",
   "/dashboard/calendar": "calendar",
   "/dashboard/receipts": "receipts",
   "/dashboard/reports": "reports",

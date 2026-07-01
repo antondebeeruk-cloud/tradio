@@ -7,7 +7,7 @@ import {
 } from "@/app/pricing/actions";
 import { TradioLogo } from "@/components/tradio-logo";
 import { hasActiveSubscription } from "@/lib/subscription";
-import { createClient } from "@/lib/supabase/server";
+import { createPersonalClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Choose Package",
@@ -84,7 +84,7 @@ const packages = [
 
 export default async function PricingPage({ searchParams }: PricingPageProps) {
   const search = await searchParams;
-  const supabase = await createClient();
+  const supabase = await createPersonalClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
