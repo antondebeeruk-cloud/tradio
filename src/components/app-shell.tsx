@@ -1,5 +1,6 @@
 import {
   FileText,
+  Fuel,
   CalendarDays,
   CalendarClock,
   LayoutDashboard,
@@ -29,6 +30,7 @@ const navItems = [
   { label: "Quotes", href: "/quotes", icon: FileText },
   { label: "Invoices", href: "/invoices", icon: ReceiptText },
   { label: "Receipts", href: "/dashboard/receipts", icon: ReceiptText },
+  { label: "Fuel Log", href: "/dashboard/fuel-log", icon: Fuel },
   {
     label: "Calendar",
     href: "/dashboard/calendar",
@@ -72,6 +74,7 @@ type AppShellProps = {
     | "quotes"
     | "invoices"
     | "receipts"
+    | "fuel-log"
     | "calendar"
     | "reports"
     | "jobs"
@@ -95,6 +98,7 @@ const activeByHref: Record<string, AppShellProps["active"]> = {
   "/dashboard/team": "team",
   "/dashboard/calendar": "calendar",
   "/dashboard/receipts": "receipts",
+  "/dashboard/fuel-log": "fuel-log",
   "/dashboard/reports": "reports",
   "/dashboard/support": "support",
   "/invoices": "invoices",

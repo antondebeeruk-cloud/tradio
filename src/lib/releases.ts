@@ -12,6 +12,19 @@ export type TradioRelease = {
 // Keep the newest release first so the page always leads with the current version.
 export const tradioReleases: TradioRelease[] = [
   {
+    date: "1 July 2026", status: "Beta", version: "0.19",
+    summary: "Tradio Fuel & Mileage gives trade businesses a shared vehicle logbook with customer-linked trips and phone GPS tracking.",
+    groups: [{ title: "Fuel and mileage logbook", features: [
+      "Add business vehicles with registration, make, model, fuel type and odometer.",
+      "Record fuel purchases, litres or energy, cost, station and mileage.",
+      "Log manual trips with leaving and arriving destinations.",
+      "Select a customer to use their saved address as the destination.",
+      "Track live phone GPS mileage while the tracking screen remains open.",
+      "Save timestamped route points securely to the shared workspace.",
+      "Show total logged mileage, fuel spending and recent trip history."
+    ] }]
+  },
+  {
     date: "1 July 2026",
     status: "Beta",
     summary: "Tradio Job Maps puts each customer location and phone-friendly directions directly beside the work it belongs to.",

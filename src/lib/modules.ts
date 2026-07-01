@@ -5,6 +5,7 @@ export const tradioModules = {
   quotes: { label: "Quotes", href: "/quotes" },
   invoices: { label: "Invoices", href: "/invoices" },
   receipts: { label: "Receipts", href: "/dashboard/receipts" },
+  fuelLog: { label: "Fuel Log", href: "/dashboard/fuel-log" },
   calendar: { label: "Calendar", href: "/dashboard/calendar" },
   reports: { label: "Reports", href: "/dashboard/reports" },
   jobs: { label: "Jobs", href: "/dashboard/jobs" },
