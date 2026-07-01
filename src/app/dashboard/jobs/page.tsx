@@ -23,6 +23,7 @@ import {
 } from "@/app/dashboard/jobs/actions";
 import { AppShell } from "@/components/app-shell";
 import { ReceiptCapture } from "@/components/receipt-capture";
+import { JobMap } from "@/components/job-map";
 import { currency, formatDate } from "@/lib/documents";
 import {
   signedReceiptDownloadUrl,
@@ -38,7 +39,13 @@ type JobsPageProps = {
 };
 
 type RelationWithName =
-  | { name?: string | null }
+  | {
+      address_line_1?: string | null;
+      address_line_2?: string | null;
+      name?: string | null;
+      postcode?: string | null;
+      town?: string | null;
+    }
   | { quote_number?: string | null; total?: number | string | null }
   | { invoice_number?: string | null; total?: number | string | null };
 
@@ -105,6 +112,14 @@ function relationName(relation: RelationWithName | RelationWithName[] | null) {
   return "";
 }
 
+function customerAddress(relation: RelationWithName | RelationWithName[] | null) {
+  const value = singleRelation(relation);
+  if (!value || !("name" in value)) return "";
+  return [value.address_line_1, value.address_line_2, value.town, value.postcode]
+    .filter(Boolean)
+    .join(", ");
+}
+
 function statusLabel(status: string) {
   return (
     jobStatusOptions.find((option) => option.value === status)?.label ?? status
@@ -154,7 +169,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
       supabase
         .from("jobs")
         .select(
-          "id, customer_id, title, job_type, hours_worked, description, status, start_date, due_date, completed_at, related_quote_id, related_invoice_id, notes, created_at, customers(name), quotes(quote_number,total), invoices(invoice_number,total)",
+          "id, customer_id, title, job_type, hours_worked, description, status, start_date, due_date, completed_at, related_quote_id, related_invoice_id, notes, created_at, customers(name,address_line_1,address_line_2,town,postcode), quotes(quote_number,total), invoices(invoice_number,total)",
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
@@ -406,6 +421,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                 const profit = revenue - costTotal;
                 const profitClass =
                   profit >= 0 ? "text-[#177a55]" : "text-[#d94800]";
+                const address = customerAddress(job.customers);
 
                 return (
                 <article className="px-5 py-5" key={job.id}>
@@ -480,6 +496,11 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                         <ClipboardCheck aria-hidden="true" size={16} />
                         Completion report
                       </Link>
+                      {address ? <JobMap address={address} jobTitle={job.title} /> : (
+                        <p className="mt-4 text-sm text-slate-500">
+                          Add an address to this customer to show the job map.
+                        </p>
+                      )}
                     </div>
 
                     <form action={updateJobStatus} className="flex gap-2">

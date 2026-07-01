@@ -14,6 +14,19 @@ export const tradioReleases: TradioRelease[] = [
   {
     date: "1 July 2026",
     status: "Beta",
+    summary: "Tradio Job Maps puts each customer location and phone-friendly directions directly beside the work it belongs to.",
+    version: "0.18",
+    groups: [{ title: "Job maps and directions", features: [
+      "Build each job location from the customer address and postcode already stored in Tradio.",
+      "Open an interactive map directly from the job card.",
+      "Launch turn-by-turn directions in Google Maps with one tap.",
+      "Lazy-load maps only when requested to reduce page weight and unnecessary third-party requests.",
+      "Show a clear prompt when a customer still needs an address."
+    ] }]
+  },
+  {
+    date: "1 July 2026",
+    status: "Beta",
     summary: "Tradio Account Security lets signed-in users change their password safely from Settings.",
     version: "0.17",
     groups: [{ title: "Account password controls", features: [
