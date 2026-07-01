@@ -15,6 +15,27 @@ export const tradioReleases: TradioRelease[] = [
     date: "1 July 2026",
     status: "Beta",
     summary:
+      "Tradio Pro Recurring Work automatically turns regular customer commitments into scheduled jobs and predictable revenue.",
+    version: "0.14",
+    groups: [
+      {
+        title: "Recurring jobs and service plans",
+        features: [
+          "Create weekly, fortnightly, monthly, quarterly and annual service plans.",
+          "Generate upcoming jobs and connected calendar visits automatically without duplicates.",
+          "Pause, resume or remove recurring work while keeping existing job history.",
+          "Set visit times, expected values, locations, notes and service end dates.",
+          "Send customers an email reminder before upcoming recurring appointments.",
+          "Track active plans and expected recurring monthly revenue from the dashboard.",
+          "Run generation and reminders securely from a protected cron endpoint.",
+        ],
+      },
+    ],
+  },
+  {
+    date: "1 July 2026",
+    status: "Beta",
+    summary:
       "Tradio Pro Purchase Orders connects supplier purchasing directly to jobs and actual profitability.",
     version: "0.13",
     groups: [

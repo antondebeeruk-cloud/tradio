@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   AlertCircle,
   ArrowRight,
+  CalendarClock,
   FileText,
   Plus,
   UsersRound,
@@ -57,6 +58,7 @@ export default async function DashboardPage() {
     recentQuotesResult,
     recentInvoicesResult,
     unpaidInvoicesResult,
+    recurringResult,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -93,6 +95,11 @@ export default async function DashboardPage() {
       .eq("user_id", user.id)
       .in("status", ["unpaid", "overdue"])
       .order("due_date", { ascending: true }),
+    supabase
+      .from("recurring_jobs")
+      .select("frequency, expected_value")
+      .eq("user_id", user.id)
+      .eq("status", "active"),
   ]);
 
   const recentQuotes = recentQuotesResult.data ?? [];
@@ -101,6 +108,20 @@ export default async function DashboardPage() {
 
   const unpaidTotal = unpaidInvoices.reduce(
     (runningTotal, invoice) => runningTotal + Number(invoice.total ?? 0),
+    0,
+  );
+  const recurringFactors: Record<string, number> = {
+    annually: 1 / 12,
+    fortnightly: 26 / 12,
+    monthly: 1,
+    quarterly: 1 / 3,
+    weekly: 52 / 12,
+  };
+  const recurringMonthly = (recurringResult.data ?? []).reduce(
+    (total, plan) =>
+      total +
+      Number(plan.expected_value ?? 0) *
+        (recurringFactors[plan.frequency] ?? 0),
     0,
   );
 
@@ -128,6 +149,13 @@ export default async function DashboardPage() {
       icon: UsersRound,
       unavailable: Boolean(customersResult.error),
     },
+    {
+      label: "Recurring monthly",
+      value: currency(recurringMonthly),
+      note: `${recurringResult.data?.length ?? 0} active service plan${recurringResult.data?.length === 1 ? "" : "s"}`,
+      icon: CalendarClock,
+      unavailable: Boolean(recurringResult.error),
+    },
   ];
 
   return (
@@ -153,7 +181,7 @@ export default async function DashboardPage() {
       </header>
 
       <div className="app-page-body">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => (
             <article
               className="surface-pad relative overflow-hidden"

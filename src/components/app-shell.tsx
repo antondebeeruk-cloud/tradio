@@ -1,6 +1,7 @@
 import {
   FileText,
   CalendarDays,
+  CalendarClock,
   LayoutDashboard,
   Lock,
   LogOut,
@@ -48,6 +49,12 @@ const navItems = [
     proOnly: true,
   },
   {
+    label: "Recurring Work",
+    href: "/dashboard/recurring",
+    icon: CalendarClock,
+    proOnly: true,
+  },
+  {
     label: "Team",
     href: "/dashboard/team",
     icon: Users,
@@ -69,6 +76,7 @@ type AppShellProps = {
     | "reports"
     | "jobs"
     | "purchase-orders"
+    | "recurring"
     | "team"
     | "support"
     | "settings"
@@ -83,6 +91,7 @@ const activeByHref: Record<string, AppShellProps["active"]> = {
   "/dashboard/leads": "leads",
   "/dashboard/jobs": "jobs",
   "/dashboard/purchase-orders": "purchase-orders",
+  "/dashboard/recurring": "recurring",
   "/dashboard/team": "team",
   "/dashboard/calendar": "calendar",
   "/dashboard/receipts": "receipts",
