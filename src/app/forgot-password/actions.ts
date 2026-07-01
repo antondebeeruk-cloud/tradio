@@ -30,11 +30,13 @@ export async function requestPasswordReset(formData: FormData) {
     ? `${forwardedProtocol}://${forwardedHost}`
     : null;
   const siteUrl = (
-    trustedOrigin(requestHeaders.get("origin")) ||
-    trustedOrigin(forwardedOrigin) ||
-    trustedOrigin(process.env.NEXT_PUBLIC_SITE_URL ?? null) ||
-    trustedOrigin(process.env.APP_URL ?? null) ||
-    "https://tradio.uk"
+    process.env.NODE_ENV === "production"
+      ? "https://tradio.uk"
+      : trustedOrigin(requestHeaders.get("origin")) ||
+        trustedOrigin(forwardedOrigin) ||
+        trustedOrigin(process.env.NEXT_PUBLIC_SITE_URL ?? null) ||
+        trustedOrigin(process.env.APP_URL ?? null) ||
+        "http://localhost:3000"
   ).replace(/\/$/, "");
   const supabase = await createPersonalClient();
   await supabase.auth.resetPasswordForEmail(email, {
