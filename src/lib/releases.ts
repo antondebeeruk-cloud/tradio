@@ -14,6 +14,24 @@ export const tradioReleases: TradioRelease[] = [
   {
     date: "1 July 2026",
     status: "Beta",
+    summary: "Tradio Job Completion Reports create a secure customer acceptance record with touchscreen signatures and signed PDFs.",
+    version: "0.15",
+    groups: [{
+      title: "Completion reports and customer signatures",
+      features: [
+        "Prepare completion summaries, work performed, materials and recommendations from each job.",
+        "Send customers a secure signing link by email.",
+        "Capture touchscreen or mouse signatures with the customer name.",
+        "Record acceptance time and request IP before locking the report.",
+        "Automatically mark an accepted job as completed.",
+        "Download a professional signed completion PDF with a permanent acceptance reference.",
+        "Keep existing job photos connected to the completion workflow."
+      ]
+    }]
+  },
+  {
+    date: "1 July 2026",
+    status: "Beta",
     summary:
       "Tradio Pro Recurring Work automatically turns regular customer commitments into scheduled jobs and predictable revenue.",
     version: "0.14",

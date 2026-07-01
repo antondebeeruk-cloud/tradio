@@ -1,6 +1,7 @@
 import {
   BriefcaseBusiness,
   Check,
+  ClipboardCheck,
   Download,
   Images,
   LinkIcon,
@@ -474,6 +475,10 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                             Pro
                           </span>
                         ) : null}
+                      </Link>
+                      <Link className="btn-secondary mt-2 w-fit" href={`/dashboard/jobs/${job.id}/completion`}>
+                        <ClipboardCheck aria-hidden="true" size={16} />
+                        Completion report
                       </Link>
                     </div>
 
