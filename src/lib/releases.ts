@@ -15,6 +15,26 @@ export const tradioReleases: TradioRelease[] = [
     date: "1 July 2026",
     status: "Beta",
     summary:
+      "Tradio Pro Purchase Orders connects supplier purchasing directly to jobs and actual profitability.",
+    version: "0.13",
+    groups: [
+      {
+        title: "Suppliers and purchase orders",
+        features: [
+          "Save supplier contact details and create reusable supplier records.",
+          "Build purchase orders with multiple quantities, unit costs and VAT rates.",
+          "Link orders to jobs and track draft, sent, partially received, received and cancelled statuses.",
+          "Download professional purchase order PDFs or email them directly to suppliers.",
+          "Convert received order items into job expenses without duplicating costs.",
+          "Share purchasing workflows with Pro and Elite workspace team members.",
+        ],
+      },
+    ],
+  },
+  {
+    date: "1 July 2026",
+    status: "Beta",
+    summary:
       "Tradio Pro Team Access gives busy trade businesses one shared workspace for customers, quotes, invoices, jobs, schedules and files.",
     version: "0.12",
     groups: [

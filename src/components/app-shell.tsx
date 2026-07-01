@@ -10,6 +10,7 @@ import {
   MessageCircleQuestion,
   ReceiptText,
   Settings,
+  ShoppingCart,
   Users,
   UsersRound,
 } from "lucide-react";
@@ -41,6 +42,12 @@ const navItems = [
   },
   { label: "Jobs", href: "/dashboard/jobs", icon: BriefcaseBusiness },
   {
+    label: "Purchase Orders",
+    href: "/dashboard/purchase-orders",
+    icon: ShoppingCart,
+    proOnly: true,
+  },
+  {
     label: "Team",
     href: "/dashboard/team",
     icon: Users,
@@ -61,6 +68,7 @@ type AppShellProps = {
     | "calendar"
     | "reports"
     | "jobs"
+    | "purchase-orders"
     | "team"
     | "support"
     | "settings"
@@ -74,6 +82,7 @@ const activeByHref: Record<string, AppShellProps["active"]> = {
   "/dashboard": "dashboard",
   "/dashboard/leads": "leads",
   "/dashboard/jobs": "jobs",
+  "/dashboard/purchase-orders": "purchase-orders",
   "/dashboard/team": "team",
   "/dashboard/calendar": "calendar",
   "/dashboard/receipts": "receipts",

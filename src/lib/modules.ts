@@ -8,6 +8,7 @@ export const tradioModules = {
   calendar: { label: "Calendar", href: "/dashboard/calendar" },
   reports: { label: "Reports", href: "/dashboard/reports" },
   jobs: { label: "Jobs", href: "/dashboard/jobs" },
+  purchaseOrders: { label: "Purchase Orders", href: "/dashboard/purchase-orders" },
   team: { label: "Team", href: "/dashboard/team" },
   support: { label: "Support", href: "/dashboard/support" },
   settings: { label: "Settings", href: "/settings" },
