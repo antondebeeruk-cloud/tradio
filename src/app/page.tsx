@@ -23,6 +23,10 @@ export const metadata: Metadata = {
   },
 };
 
+// Download links are configured on the deployment server. Render the landing
+// page per request so a release never serves HTML from an older build cache.
+export const dynamic = "force-dynamic";
+
 const features = [
   {
     description:
