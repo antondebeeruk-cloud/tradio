@@ -19,6 +19,7 @@ import {
 import Link from "next/link";
 import { logout } from "@/app/auth/actions";
 import { AccountMenu } from "@/components/account-menu";
+import { MobileNavigation } from "@/components/mobile-navigation";
 import { TradioLogo } from "@/components/tradio-logo";
 import { hasEliteAccess, hasProAccess } from "@/lib/subscription";
 import { createClient } from "@/lib/supabase/server";
@@ -277,7 +278,7 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
           </div>
         </aside>
 
-        <section className="min-w-0 flex-1 pb-20 lg:pb-0">
+        <section className="min-w-0 flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0">
           {user ? (
             <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#123555] bg-[linear-gradient(135deg,#06233f,#03182d)] px-4 py-3 text-white shadow-sm lg:hidden">
               <Link className="flex min-w-0 items-center gap-3" href="/dashboard">
@@ -305,20 +306,19 @@ export async function AppShell({ active, children, plan }: AppShellProps) {
           {children}
 
           {user ? (
-            <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[linear-gradient(135deg,#06233f,#03182d)] px-2 py-2 shadow-[0_-18px_40px_rgba(7,26,46,0.18)] lg:hidden">
-              <div className="flex gap-1 overflow-x-auto">
-                {navItems.map((item) => (
-                  <NavLink
-                    active={active}
-                    canUseElite={canUseElite}
-                    canUsePro={canUsePro}
-                    item={item}
-                    key={item.label}
-                    mobile
-                  />
-                ))}
-              </div>
-            </nav>
+            <MobileNavigation
+              items={navItems.map((item) => {
+                const eliteLocked = "eliteOnly" in item && item.eliteOnly && !canUseElite;
+                const proLocked = "proOnly" in item && item.proOnly && !canUsePro;
+                return {
+                  active: activeByHref[item.href] === active,
+                  href: item.href,
+                  label: item.label,
+                  locked: Boolean(eliteLocked || proLocked),
+                  requiredPlan: eliteLocked ? "Elite" : proLocked ? "Pro" : undefined,
+                };
+              })}
+            />
           ) : null}
         </section>
       </div>
