@@ -52,9 +52,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </div>
 
           <div>
-            <label className="text-sm font-medium" htmlFor="password">
-              Password
-            </label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm font-medium" htmlFor="password">Password</label>
+              <Link className="text-sm font-semibold text-copper hover:underline" href="/forgot-password">Forgot password?</Link>
+            </div>
             <input
               className="field-control"
               id="password"

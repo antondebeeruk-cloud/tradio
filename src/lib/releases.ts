@@ -14,6 +14,21 @@ export const tradioReleases: TradioRelease[] = [
   {
     date: "1 July 2026",
     status: "Beta",
+    summary: "Tradio Password Recovery lets users securely regain access without support intervention or risking their business profile data.",
+    version: "0.16",
+    groups: [{ title: "Password recovery", features: [
+      "Request a secure password reset link directly from the login page.",
+      "Use privacy-friendly responses that do not reveal whether an email is registered.",
+      "Open a session-protected password reset page from the email callback.",
+      "Confirm a new password with an eight-character minimum.",
+      "Reject expired or invalid recovery links with a clear route to try again.",
+      "Preserve existing names, business details and lead addresses during recovery.",
+      "Sign out after a successful reset so the new password is used for the next login."
+    ] }]
+  },
+  {
+    date: "1 July 2026",
+    status: "Beta",
     summary: "Tradio Job Completion Reports create a secure customer acceptance record with touchscreen signatures and signed PDFs.",
     version: "0.15",
     groups: [{
