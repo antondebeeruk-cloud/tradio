@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ExternalLink, Link2, Plus, Trash2, Unplug } from "lucide-react";
+import { ExternalLink, Link2, LockKeyhole, Plus, Trash2, Unplug } from "lucide-react";
 import {
   createSavedQuoteItem,
+  changePassword,
   deleteSavedQuoteItem,
   updateProfile,
 } from "@/app/settings/actions";
@@ -499,6 +500,39 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             <div className="flex justify-end">
               <button className="btn-primary">
                 Save settings
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section className="surface-pad mt-6" id="change-password">
+          <div className="mb-6 flex items-start gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-[#fff1e8] text-copper">
+              <LockKeyhole aria-hidden="true" size={20} />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold">Change password</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Confirm your current password before choosing a new one.
+              </p>
+            </div>
+          </div>
+          <form action={changePassword} className="grid gap-5 md:grid-cols-3">
+            <div>
+              <label className="text-sm font-medium" htmlFor="current_password">Current password</label>
+              <input autoComplete="current-password" className={fieldClass} id="current_password" name="current_password" required type="password" />
+            </div>
+            <div>
+              <label className="text-sm font-medium" htmlFor="new_password">New password</label>
+              <input autoComplete="new-password" className={fieldClass} id="new_password" minLength={8} name="new_password" required type="password" />
+            </div>
+            <div>
+              <label className="text-sm font-medium" htmlFor="password_confirmation">Confirm new password</label>
+              <input autoComplete="new-password" className={fieldClass} id="password_confirmation" minLength={8} name="password_confirmation" required type="password" />
+            </div>
+            <div className="md:col-span-3 md:flex md:justify-end">
+              <button className="btn-secondary w-full md:w-auto">
+                <LockKeyhole aria-hidden="true" size={16} /> Change password
               </button>
             </div>
           </form>

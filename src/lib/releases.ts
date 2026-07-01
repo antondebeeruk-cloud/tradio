@@ -14,6 +14,19 @@ export const tradioReleases: TradioRelease[] = [
   {
     date: "1 July 2026",
     status: "Beta",
+    summary: "Tradio Account Security lets signed-in users change their password safely from Settings.",
+    version: "0.17",
+    groups: [{ title: "Account password controls", features: [
+      "Change a login password directly from the Settings module.",
+      "Require the current password before accepting a new one.",
+      "Confirm the new password and enforce an eight-character minimum.",
+      "Reject reuse of the current password.",
+      "Keep team-member password changes separate from workspace ownership and billing."
+    ] }]
+  },
+  {
+    date: "1 July 2026",
+    status: "Beta",
     summary: "Tradio Password Recovery lets users securely regain access without support intervention or risking their business profile data.",
     version: "0.16",
     groups: [{ title: "Password recovery", features: [

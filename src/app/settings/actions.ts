@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createPersonalClient } from "@/lib/supabase/server";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -130,4 +131,40 @@ export async function deleteSavedQuoteItem(formData: FormData) {
   revalidatePath("/settings");
   revalidatePath("/quotes/new");
   redirect(`/settings?message=${encodeURIComponent("Saved quote item deleted")}`);
+}
+
+export async function changePassword(formData: FormData) {
+  const currentPassword = getString(formData, "current_password");
+  const newPassword = getString(formData, "new_password");
+  const confirmation = getString(formData, "password_confirmation");
+
+  if (newPassword.length < 8) {
+    redirect(`/settings?message=${encodeURIComponent("Use at least 8 characters for the new password.")}#change-password`);
+  }
+  if (newPassword !== confirmation) {
+    redirect(`/settings?message=${encodeURIComponent("The new passwords do not match.")}#change-password`);
+  }
+  if (currentPassword === newPassword) {
+    redirect(`/settings?message=${encodeURIComponent("Choose a new password that is different from the current one.")}#change-password`);
+  }
+
+  const supabase = await createPersonalClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) redirect("/login?message=Please log in again.");
+
+  const { error: verificationError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (verificationError) {
+    redirect(`/settings?message=${encodeURIComponent("Your current password is incorrect.")}#change-password`);
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) {
+    redirect(`/settings?message=${encodeURIComponent(error.message)}#change-password`);
+  }
+
+  revalidatePath("/", "layout");
+  redirect(`/settings?message=${encodeURIComponent("Password changed successfully.")}#change-password`);
 }
