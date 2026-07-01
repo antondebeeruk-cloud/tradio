@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CookieConsent } from "@/components/cookie-consent";
 import { Footer } from "@/components/footer";
+import { NativeAppBridge } from "@/components/native-app-bridge";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -74,6 +75,7 @@ export default function RootLayout({
   return (
     <html lang="en-GB">
       <body>
+        <NativeAppBridge />
         <div className="flex min-h-screen flex-col">
           <div className="flex-1">{children}</div>
           <Footer />

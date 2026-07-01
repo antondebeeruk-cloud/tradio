@@ -12,6 +12,21 @@ export type TradioRelease = {
 // Keep the newest release first so the page always leads with the current version.
 export const tradioReleases: TradioRelease[] = [
   {
+    date: "1 July 2026",
+    status: "Beta",
+    version: "0.20",
+    summary: "Tradio Mobile brings the shared trade workspace into native iPhone and Android apps with secure phone integrations.",
+    groups: [{ title: "Native iPhone and Android foundation", features: [
+      "Open the complete Tradio workspace inside a branded native phone app.",
+      "Share live customers, leads, quotes, invoices, jobs and reports with the existing web account.",
+      "Use native phone location permission for Fuel & Mileage tracking.",
+      "Keep browser GPS as a fallback for people using Tradio on the web.",
+      "Open secure Tradio deep links through the native app URL scheme.",
+      "Include Tradio app icons, launch screens and camera and location privacy descriptions.",
+      "Provide Android Studio and Xcode projects ready for device testing and store signing."
+    ] }]
+  },
+  {
     date: "1 July 2026", status: "Beta", version: "0.19",
     summary: "Tradio Fuel & Mileage gives trade businesses a shared vehicle logbook with customer-linked trips and phone GPS tracking.",
     groups: [{ title: "Fuel and mileage logbook", features: [
