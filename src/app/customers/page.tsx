@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, Pencil, Phone, Plus, Trash2, UserRound } from "lucide-react";
+import { Mail, Pencil, Phone, Plus, Trash2, Upload, UserRound } from "lucide-react";
 import { redirect } from "next/navigation";
 import { deleteCustomer } from "@/app/customers/actions";
 import { AppShell } from "@/components/app-shell";
@@ -51,13 +51,16 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
               Keep customer details ready for quotes and invoices.
             </h1>
           </div>
-          <Link
-            className="btn-accent"
-            href="/customers/new"
-          >
-            <Plus aria-hidden="true" size={17} />
-            Add customer
-          </Link>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link className="btn-secondary" href="/customers/import">
+              <Upload aria-hidden="true" size={17} />
+              Import customers
+            </Link>
+            <Link className="btn-accent" href="/customers/new">
+              <Plus aria-hidden="true" size={17} />
+              Add customer
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -162,6 +165,10 @@ export default async function CustomersPage({ searchParams }: CustomersPageProps
             >
               <Plus aria-hidden="true" size={17} />
               Add customer
+            </Link>
+            <Link className="btn-secondary mt-3" href="/customers/import">
+              <Upload aria-hidden="true" size={17} />
+              Import from accounting software
             </Link>
           </section>
         )}

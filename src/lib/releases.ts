@@ -12,6 +12,20 @@ export type TradioRelease = {
 // Keep the newest release first so the page always leads with the current version.
 export const tradioReleases: TradioRelease[] = [
   {
+    date: "2 July 2026",
+    status: "Beta",
+    version: "0.21",
+    summary: "Tradio Customer Import moves customer lists from Sage, QuickBooks and Xero into the shared workspace safely.",
+    groups: [{ title: "Accounting customer imports", features: [
+      "Upload customer and contact exports from Sage, QuickBooks or Xero as CSV.",
+      "Detect common names, emails, phone numbers, addresses, towns and UK postcodes automatically.",
+      "Preview every mapped customer before anything is saved.",
+      "Flag invalid rows and duplicate emails or customer and postcode combinations.",
+      "Skip duplicates safely and import up to 500 new customers at once.",
+      "Keep the source platform recorded in each imported customer's notes."
+    ] }]
+  },
+  {
     date: "1 July 2026",
     status: "Beta",
     version: "0.20",
