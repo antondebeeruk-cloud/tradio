@@ -42,7 +42,14 @@ export async function signup(formData: FormData) {
   const password = getString(formData, "password");
   const fullName = getString(formData, "fullName");
   const businessName = getString(formData, "businessName");
+  const legalAcceptance = getString(formData, "legalAcceptance");
   const origin = (await headers()).get("origin");
+
+  if (legalAcceptance !== "accepted") {
+    redirect(
+      `/signup?message=${encodeURIComponent("You must agree to the Terms of Use and End-User Licence Agreement to create an account.")}`,
+    );
+  }
 
   const supabase = await createPersonalClient();
   const { data, error } = await supabase.auth
@@ -56,6 +63,8 @@ export async function signup(formData: FormData) {
         data: {
           full_name: fullName,
           business_name: businessName,
+          legal_accepted_at: new Date().toISOString(),
+          legal_version: "2026-07-02",
         },
       },
     })

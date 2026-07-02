@@ -15,6 +15,9 @@ export function Footer() {
           <Link className="font-semibold text-forest hover:underline" href="/terms">
             Terms of Use
           </Link>
+          <Link className="font-semibold text-forest hover:underline" href="/eula">
+            EULA
+          </Link>
           <Link className="font-semibold text-forest hover:underline" href="/cookie-policy">
             Cookie Policy
           </Link>

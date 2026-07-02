@@ -88,6 +88,31 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
             </p>
           ) : null}
 
+          <label className="flex items-start gap-3 text-sm leading-5 text-slate-600">
+            <input
+              className="mt-1 h-4 w-4 shrink-0 accent-copper"
+              name="legalAcceptance"
+              required
+              type="checkbox"
+              value="accepted"
+            />
+            <span>
+              I agree to the{" "}
+              <Link className="font-semibold text-copper hover:underline" href="/terms" target="_blank">
+                Terms of Use
+              </Link>{" "}
+              and{" "}
+              <Link className="font-semibold text-copper hover:underline" href="/eula" target="_blank">
+                End-User Licence Agreement
+              </Link>
+              , and acknowledge the{" "}
+              <Link className="font-semibold text-copper hover:underline" href="/privacy-policy" target="_blank">
+                Privacy Policy
+              </Link>
+              .
+            </span>
+          </label>
+
           <button className="btn-accent w-full py-2.5">
             <UserPlus aria-hidden="true" size={17} />
             Sign up

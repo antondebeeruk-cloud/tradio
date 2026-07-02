@@ -14,6 +14,19 @@ export const tradioReleases: TradioRelease[] = [
   {
     date: "2 July 2026",
     status: "Beta",
+    version: "0.23",
+    summary: "Tradio Account Agreements adds a clear End-User Licence Agreement and recorded acceptance during signup.",
+    groups: [{ title: "End-user licence agreement", features: [
+      "Publish a dedicated End-User Licence Agreement for the Tradio web service and native mobile apps.",
+      "Link the EULA from the footer on public and signed-in pages.",
+      "Require new users to accept the Terms of Use and EULA before creating an account.",
+      "Record the agreement version and acceptance time with the new user's authentication metadata.",
+      "Keep solicitor-review placeholders visible until Tradio's final legal entity and liability wording are approved."
+    ] }]
+  },
+  {
+    date: "2 July 2026",
+    status: "Beta",
     version: "0.22",
     summary: "Tradio Accounting Connections brings Xero, Sage Business Cloud Accounting and QuickBooks Online together in Settings.",
     groups: [{ title: "Sage and QuickBooks OAuth connections", features: [

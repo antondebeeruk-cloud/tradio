@@ -25,6 +25,11 @@ const publicRoutes = [
   },
   {
     changeFrequency: "monthly" as const,
+    path: "/eula",
+    priority: 0.3,
+  },
+  {
+    changeFrequency: "monthly" as const,
     path: "/cookie-policy",
     priority: 0.3,
   },
