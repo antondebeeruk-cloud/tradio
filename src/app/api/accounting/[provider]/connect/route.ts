@@ -9,6 +9,7 @@ import {
   parseAccountingProvider,
 } from "@/lib/accounting-integrations";
 import { createClient } from "@/lib/supabase/server";
+import { siteRedirect } from "@/lib/site-url";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,7 @@ export async function GET(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.redirect(new URL("/login?redirectedFrom=/settings", request.url));
+    return NextResponse.redirect(siteRedirect("/login?redirectedFrom=/settings"));
   }
 
   const meta = {
@@ -61,7 +62,7 @@ export async function GET(
       ...meta,
     });
     return NextResponse.redirect(
-      new URL(`/settings?message=${encodeURIComponent(message)}`, request.url),
+      siteRedirect(`/settings?message=${encodeURIComponent(message)}`),
     );
   }
 }

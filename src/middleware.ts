@@ -1,6 +1,60 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
+const allowedMethods = "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS";
+const blockedMethods = new Set(["CONNECT", "TRACE", "TRACK"]);
+
+function forwardedProtocol(request: NextRequest) {
+  return (
+    request.headers.get("x-forwarded-proto")?.split(",")[0].trim() ||
+    request.nextUrl.protocol.replace(":", "")
+  ).toLowerCase();
+}
+
+function secureResponse(request: NextRequest, response: NextResponse) {
+  const isProduction = process.env.NODE_ENV === "production";
+  const isHttps = forwardedProtocol(request) === "https";
+  const contentPolicy = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co${isProduction ? "" : " http: ws:"}`,
+    "font-src 'self' data:",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "frame-src 'self' https://www.google.com",
+    "img-src 'self' data: blob: https:",
+    "object-src 'none'",
+    `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
+    "style-src 'self' 'unsafe-inline'",
+  ];
+  if (isHttps) contentPolicy.push("upgrade-insecure-requests");
+
+  response.headers.set(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+  );
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  response.headers.set(
+    "Content-Security-Policy",
+    contentPolicy.join("; "),
+  );
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(self), geolocation=(self), microphone=()");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-DNS-Prefetch-Control", "off");
+  response.headers.set("X-Frame-Options", "DENY");
+
+  if (isHttps) {
+    response.headers.set(
+      "Strict-Transport-Security",
+      "max-age=63072000; includeSubDomains; preload",
+    );
+  }
+
+  return response;
+}
+
 function hasSupabaseSessionCookie(request: NextRequest) {
   return request.cookies
     .getAll()
@@ -51,6 +105,26 @@ function hasActivePlan(profile: {
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const hostname = requestHostname(request);
+  const isProductionHost =
+    hostname === "tradio.uk" ||
+    hostname === "www.tradio.uk" ||
+    hostname === "admin.tradio.uk";
+
+  if (blockedMethods.has(request.method.toUpperCase())) {
+    return secureResponse(
+      request,
+      new NextResponse(null, {
+        headers: { Allow: allowedMethods },
+        status: 405,
+      }),
+    );
+  }
+
+  if (isProductionHost && forwardedProtocol(request) !== "https") {
+    const secureUrl = request.nextUrl.clone();
+    secureUrl.protocol = "https:";
+    return secureResponse(request, NextResponse.redirect(secureUrl, 308));
+  }
   const isAdminHost =
     hostname === "admin.tradio.uk" || hostname === "admin.localhost";
   const adminRewritePath =
@@ -67,8 +141,11 @@ export async function middleware(request: NextRequest) {
     (hostname === "tradio.uk" || hostname === "www.tradio.uk")
   ) {
     const adminPath = routePath === "/admin" ? "/" : routePath;
-    return NextResponse.redirect(
-      new URL(`${adminPath}${request.nextUrl.search}`, "https://admin.tradio.uk"),
+    return secureResponse(
+      request,
+      NextResponse.redirect(
+        new URL(`${adminPath}${request.nextUrl.search}`, "https://admin.tradio.uk"),
+      ),
     );
   }
 
@@ -83,7 +160,7 @@ export async function middleware(request: NextRequest) {
     const adminHome = request.nextUrl.clone();
     adminHome.pathname = "/";
     adminHome.search = "";
-    return NextResponse.redirect(adminHome);
+    return secureResponse(request, NextResponse.redirect(adminHome));
   }
 
   const isProtectedRoute =
@@ -114,7 +191,7 @@ export async function middleware(request: NextRequest) {
   };
 
   if (!needsAuthCheck) {
-    return nextResponse();
+    return secureResponse(request, nextResponse());
   }
 
   let response = nextResponse();
@@ -144,7 +221,12 @@ export async function middleware(request: NextRequest) {
             });
             response = nextResponse();
             cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options);
+              response.cookies.set(name, value, {
+                ...options,
+                httpOnly: true,
+                sameSite: options.sameSite ?? "lax",
+                secure: process.env.NODE_ENV === "production",
+              });
             });
           },
         },
@@ -194,7 +276,10 @@ export async function middleware(request: NextRequest) {
         ? "Your session expired. Please log in again."
         : "Please log in to continue.",
     );
-    return clearSupabaseCookies(request, NextResponse.redirect(redirectUrl));
+    return secureResponse(
+      request,
+      clearSupabaseCookies(request, NextResponse.redirect(redirectUrl)),
+    );
   }
 
   if (isProtectedRoute && hasValidSession && !hasPlanAccess) {
@@ -204,17 +289,17 @@ export async function middleware(request: NextRequest) {
       "message",
       "Choose an active package to continue using Tradio.",
     );
-    return NextResponse.redirect(redirectUrl);
+    return secureResponse(request, NextResponse.redirect(redirectUrl));
   }
 
   if (isAuthRoute && hasValidSession) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = hasPlanAccess ? "/dashboard" : "/pricing";
     redirectUrl.search = "";
-    return NextResponse.redirect(redirectUrl);
+    return secureResponse(request, NextResponse.redirect(redirectUrl));
   }
 
-  return response;
+  return secureResponse(request, response);
 }
 
 export const config = {

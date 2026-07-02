@@ -1,7 +1,8 @@
 create table if not exists public.accounting_connections (
   user_id uuid not null references auth.users (id) on delete cascade,
   provider text not null check (provider in ('sage', 'quickbooks')),
-  organisation_id text not null,
+  organisation_id text,
+  encrypted_organisation_id jsonb,
   organisation_name text,
   encrypted_token_set jsonb not null,
   scopes text,
@@ -9,9 +10,6 @@ create table if not exists public.accounting_connections (
   updated_at timestamptz not null default now(),
   primary key (user_id, provider)
 );
-
-create index if not exists accounting_connections_organisation_idx
-  on public.accounting_connections (provider, organisation_id);
 
 alter table public.accounting_connections enable row level security;
 

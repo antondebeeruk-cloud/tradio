@@ -100,10 +100,14 @@ function getEncryptionKey() {
 }
 
 function encryptTokenSet(tokenSet: TokenSet): EncryptedValue {
+  return encryptSensitiveValue(JSON.stringify(tokenSet));
+}
+
+function encryptSensitiveValue(valueToEncrypt: string): EncryptedValue {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", getEncryptionKey(), iv);
   const value = Buffer.concat([
-    cipher.update(JSON.stringify(tokenSet), "utf8"),
+    cipher.update(valueToEncrypt, "utf8"),
     cipher.final(),
   ]);
   return {
@@ -198,6 +202,7 @@ export async function getAccountingOrganisation(
 ): Promise<AccountingOrganisation> {
   if (provider === "sage") {
     const response = await fetch(`${sageApiUrl}/businesses`, {
+      cache: "no-store",
       headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` },
     });
     const data = await response.json().catch(() => null);
@@ -218,6 +223,7 @@ export async function getAccountingOrganisation(
   const response = await fetch(
     `${baseUrl}/v3/company/${encodeURIComponent(realmId)}/companyinfo/${encodeURIComponent(realmId)}?minorversion=75`,
     {
+      cache: "no-store",
       headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` },
     },
   );
@@ -244,7 +250,8 @@ export async function saveAccountingConnection({
     {
       connected_at: now,
       encrypted_token_set: encryptTokenSet(tokenSet),
-      organisation_id: organisation.id,
+      encrypted_organisation_id: encryptSensitiveValue(organisation.id),
+      organisation_id: organisation.provider === "quickbooks" ? null : organisation.id,
       organisation_name: organisation.name ?? null,
       provider: organisation.provider,
       scopes: tokenSet.scope ?? null,
@@ -260,7 +267,7 @@ export async function getAccountingConnectionStatuses(userId: string) {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("accounting_connections")
-    .select("provider, organisation_id, organisation_name, connected_at, updated_at")
+    .select("provider, organisation_name, connected_at, updated_at")
     .eq("user_id", userId);
   if (error) throw new Error(error.message);
   return data ?? [];

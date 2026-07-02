@@ -14,6 +14,23 @@ export const tradioReleases: TradioRelease[] = [
   {
     date: "2 July 2026",
     status: "Beta",
+    version: "0.24",
+    summary: "Tradio Security Hardening prepares accounting connections and the wider app for external provider security review.",
+    groups: [{ title: "QuickBooks and platform security", features: [
+      "Encrypt QuickBooks company identifiers and OAuth token sets at rest with AES-256-GCM.",
+      "Force HTTPS and HSTS across Tradio production hosts.",
+      "Disable browser caching on SSL pages and pages containing sensitive information.",
+      "Set secure browser headers for content policy, clickjacking, MIME sniffing, referrers and device permissions.",
+      "Reject TRACE, TRACK and CONNECT requests at the application boundary.",
+      "Protect accounting disconnect requests with same-origin validation.",
+      "Return explicit 302 OAuth callback redirects without leaking callback URLs through referrer headers.",
+      "Set server-managed session cookies to Secure, HttpOnly and SameSite=Lax in production.",
+      "Add an operational security checklist for VPS patching, Nginx TLS, vulnerability scans and Intuit review evidence."
+    ] }]
+  },
+  {
+    date: "2 July 2026",
+    status: "Beta",
     version: "0.23",
     summary: "Tradio Account Agreements adds a clear End-User Licence Agreement and recorded acceptance during signup.",
     groups: [{ title: "End-user licence agreement", features: [

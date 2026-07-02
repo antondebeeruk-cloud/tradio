@@ -27,14 +27,28 @@ async function createBaseClient() {
       },
       set(name: string, value: string, options: CookieOptions) {
         try {
-          cookieStore.set({ name, value, ...options });
+          cookieStore.set({
+            name,
+            value,
+            ...options,
+            httpOnly: true,
+            sameSite: options.sameSite ?? "lax",
+            secure: process.env.NODE_ENV === "production",
+          });
         } catch {
           // Server Components cannot set cookies, but middleware and actions can.
         }
       },
       remove(name: string, options: CookieOptions) {
         try {
-          cookieStore.set({ name, value: "", ...options });
+          cookieStore.set({
+            name,
+            value: "",
+            ...options,
+            httpOnly: true,
+            sameSite: options.sameSite ?? "lax",
+            secure: process.env.NODE_ENV === "production",
+          });
         } catch {
           // Server Components cannot set cookies, but middleware and actions can.
         }

@@ -3,6 +3,7 @@ import Link from "next/link";
 
 export type AccountingConnectionDisplay = {
   configured: boolean;
+  connected?: boolean;
   connectedAt?: string | null;
   error?: string | null;
   id?: string | null;
@@ -63,7 +64,7 @@ export function AccountingIntegrations({
         {connections.map((connection) => {
           const details = providerDetails[connection.provider];
           const routes = providerRoutes(connection.provider);
-          const connected = Boolean(connection.id) && !connection.error;
+          const connected = Boolean(connection.connected ?? connection.id) && !connection.error;
 
           return (
             <article
@@ -95,9 +96,6 @@ export function AccountingIntegrations({
                 <div className="mt-4 rounded-lg border border-field bg-white p-3 text-sm">
                   <p className="truncate font-semibold text-ink">
                     {connection.name ?? details.label}
-                  </p>
-                  <p className="mt-1 truncate text-xs text-slate-500">
-                    ID: {connection.id}
                   </p>
                   {connection.connectedAt ? (
                     <p className="mt-1 text-xs text-slate-500">
