@@ -69,6 +69,16 @@ export function requireXeroConfig() {
   };
 }
 
+export function isXeroConfigured() {
+  try {
+    requireXeroConfig();
+    getTokenEncryptionKey();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getTokenEncryptionKey() {
   const rawKey = process.env.XERO_TOKEN_ENCRYPTION_KEY;
 

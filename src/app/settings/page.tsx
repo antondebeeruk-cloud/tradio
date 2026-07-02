@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { ExternalLink, Link2, LockKeyhole, Plus, Trash2, Unplug } from "lucide-react";
+import { LockKeyhole, Plus, Trash2 } from "lucide-react";
 import {
   createSavedQuoteItem,
   changePassword,
@@ -8,9 +7,14 @@ import {
   updateProfile,
 } from "@/app/settings/actions";
 import { AppShell } from "@/components/app-shell";
+import { AccountingIntegrations } from "@/components/accounting-integrations";
 import { currency } from "@/lib/documents";
+import {
+  getAccountingConnectionStatuses,
+  isAccountingProviderConfigured,
+} from "@/lib/accounting-integrations";
 import { createClient } from "@/lib/supabase/server";
-import { getXeroConnectionStatus } from "@/lib/xero";
+import { getXeroConnectionStatus, isXeroConfigured } from "@/lib/xero";
 
 type SettingsPageProps = {
   searchParams: Promise<{
@@ -65,18 +69,33 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   const savedItems = savedItemsTableMissing ? [] : savedItemsResult.data ?? [];
   const error =
     profileResult.error ?? (savedItemsTableMissing ? null : savedItemsResult.error);
-  const xeroConnection = await getXeroConnectionStatus(user.id).catch(
-    (xeroError) => ({
+  const [xeroConnection, accountingConnectionsResult] = await Promise.all([
+    getXeroConnectionStatus(user.id).catch((xeroError) => ({
       error:
         xeroError instanceof Error
           ? xeroError.message
           : "Could not read Xero connection.",
-    }),
-  );
+    })),
+    getAccountingConnectionStatuses(user.id)
+      .then((data) => ({ data, error: null as string | null }))
+      .catch((accountingError) => ({
+        data: [],
+        error:
+          accountingError instanceof Error
+            ? accountingError.message
+            : "Could not read accounting connections.",
+      })),
+  ]);
   const xeroConnectionError =
     xeroConnection && "error" in xeroConnection ? xeroConnection.error : null;
   const activeXeroConnection =
     xeroConnection && !("error" in xeroConnection) ? xeroConnection : null;
+  const sageConnection = accountingConnectionsResult.data.find(
+    (connection) => connection.provider === "sage",
+  );
+  const quickBooksConnection = accountingConnectionsResult.data.find(
+    (connection) => connection.provider === "quickbooks",
+  );
 
   const pageMessage = settingsMessage(error?.message ?? search.message);
 
@@ -225,71 +244,34 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           </div>
         </section>
 
-        <section className="surface-pad mb-6">
-          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-lg bg-[#e8f6ff] text-[#006b9a]">
-                  <Link2 aria-hidden="true" size={20} />
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold">Xero integration</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Connect Xero now. Quote and invoice export will be added in
-                    the next stage.
-                  </p>
-                </div>
-              </div>
-
-              {xeroConnectionError ? (
-                <p className="notice mt-4 max-w-2xl">
-                  {xeroConnectionError}
-                </p>
-              ) : activeXeroConnection ? (
-                <div className="mt-4 rounded-lg border border-field bg-mist p-4 text-sm">
-                  <p className="font-semibold text-ink">
-                    Connected to {activeXeroConnection.tenant_name ?? "Xero"}
-                  </p>
-                  <p className="mt-1 text-slate-500">
-                    Tenant ID: {activeXeroConnection.tenant_id}
-                  </p>
-                  <p className="mt-1 text-slate-500">
-                    Connected{" "}
-                    {new Date(
-                      activeXeroConnection.connected_at,
-                    ).toLocaleDateString("en-GB")}
-                  </p>
-                </div>
-              ) : (
-                <p className="mt-4 text-sm text-slate-500">
-                  Xero is not connected yet.
-                </p>
-              )}
-            </div>
-
-            <div className="flex shrink-0 flex-col gap-3 sm:flex-row md:flex-col">
-              {xeroConnectionError || !activeXeroConnection ? (
-                <Link className="btn-primary" href="/api/xero/connect">
-                  <ExternalLink aria-hidden="true" size={16} />
-                  Connect Xero
-                </Link>
-              ) : (
-                <>
-                  <Link className="btn-secondary" href="/api/xero/connect">
-                    <ExternalLink aria-hidden="true" size={16} />
-                    Reconnect
-                  </Link>
-                  <form action="/api/xero/disconnect" method="post">
-                    <button className="btn-secondary w-full" type="submit">
-                      <Unplug aria-hidden="true" size={16} />
-                      Disconnect
-                    </button>
-                  </form>
-                </>
-              )}
-            </div>
-          </div>
-        </section>
+        <AccountingIntegrations
+          connections={[
+            {
+              configured: isXeroConfigured(),
+              connectedAt: activeXeroConnection?.connected_at,
+              error: xeroConnectionError,
+              id: activeXeroConnection?.tenant_id,
+              name: activeXeroConnection?.tenant_name,
+              provider: "xero",
+            },
+            {
+              configured: isAccountingProviderConfigured("sage"),
+              connectedAt: sageConnection?.connected_at,
+              error: accountingConnectionsResult.error,
+              id: sageConnection?.organisation_id,
+              name: sageConnection?.organisation_name,
+              provider: "sage",
+            },
+            {
+              configured: isAccountingProviderConfigured("quickbooks"),
+              connectedAt: quickBooksConnection?.connected_at,
+              error: accountingConnectionsResult.error,
+              id: quickBooksConnection?.organisation_id,
+              name: quickBooksConnection?.organisation_name,
+              provider: "quickbooks",
+            },
+          ]}
+        />
 
         <section className="surface-pad">
           <div className="mb-6">

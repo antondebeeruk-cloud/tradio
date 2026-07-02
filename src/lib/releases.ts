@@ -14,6 +14,21 @@ export const tradioReleases: TradioRelease[] = [
   {
     date: "2 July 2026",
     status: "Beta",
+    version: "0.22",
+    summary: "Tradio Accounting Connections brings Xero, Sage Business Cloud Accounting and QuickBooks Online together in Settings.",
+    groups: [{ title: "Sage and QuickBooks OAuth connections", features: [
+      "Connect and disconnect Sage Business Cloud Accounting through its official OAuth flow.",
+      "Connect, verify and revoke a QuickBooks Online company connection.",
+      "Display Xero, Sage and QuickBooks together in one Accounting integrations section.",
+      "Encrypt Sage and QuickBooks access and refresh tokens before database storage.",
+      "Protect callbacks with short-lived server-only OAuth state cookies.",
+      "Keep connection audit records without exposing credentials to the browser.",
+      "Show a clear server setup state until each provider's credentials are configured."
+    ] }]
+  },
+  {
+    date: "2 July 2026",
+    status: "Beta",
     version: "0.21",
     summary: "Tradio Customer Import moves customer lists from Sage, QuickBooks and Xero into the shared workspace safely.",
     groups: [{ title: "Accounting customer imports", features: [
